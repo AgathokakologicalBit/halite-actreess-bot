@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <list>
+#include <map>
 
 #include "drone.h"
 #include "../hlt/hlt.hpp"
@@ -14,13 +15,12 @@ public:
     int id;
 
     std::vector<Drone*> drones;
-    std::vector<Drone*> my_drones;
+    std::map<int, Drone*> my_drones;
 
     explicit Bot(hlt::Metadata data)
             : id(data.player_id)
     {
-        drones.reserve(600);
-        my_drones.reserve(300);
+        drones.resize(1000);
 
         for (const auto& p : data.initial_map.ships) {
             for (const auto &s : p.second) {
@@ -28,13 +28,34 @@ public:
 
                 this->drones.push_back(d);
                 if (this->id == p.first)
-                    this->my_drones.push_back(d);
+                    this->my_drones[s.entity_id] = d;
             }
         }
     }
 
     std::vector<hlt::Move> make_turn(const hlt::Map& map) {
         using namespace hlt;
+
+        for (auto& d : this->drones)
+            if (d) d->life_state += 1;
+
+        for (const auto& p : map.ships) {
+            for (const auto &s : p.second) {
+                if (!this->drones[s.entity_id]) {
+                    this->drones[s.entity_id] = new Drone(s);
+                    if (s.owner_id == this->id)
+                        this->my_drones[s.entity_id] = this->drones[s.entity_id];
+
+                    Log::log("Bot #" + std::to_string(s.entity_id) + " was spawned");
+                }
+
+                this->drones[s.entity_id]->update(s);
+            }
+        }
+
+        for (auto& d : this->drones)
+            if (d && d->life_state == 1)
+                Log::log("Bot #" + std::to_string(d->id) + " was destroyed");
 
         std::vector<Move> moves;
         Log::log(std::string("Alive ships: ") + std::to_string(map.ship_map.at(this->id).size()));
