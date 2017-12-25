@@ -6,6 +6,7 @@ TEST_COUNT=50
 SCORE=0
 SCORE_MAX=$(( TEST_COUNT * (TEST_COUNT ** (PLAYERS_COUNT - 1) - 1) ))
 
+rm *.log
 rm *.hlt
 
 for (( i=1; i<=$TEST_COUNT; i++ ))
@@ -18,3 +19,6 @@ done
 
 echo scored: $(( SCORE_MAX - SCORE )) out of ${SCORE_MAX}
 echo result: $((100 - SCORE * 100 / SCORE_MAX))%
+
+rm *_*.log
+rm *.hlt
