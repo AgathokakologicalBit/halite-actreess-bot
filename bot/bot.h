@@ -4,8 +4,8 @@
 #include <list>
 
 #include "drone.h"
-#include <hlt.hpp>
-#include <navigation.hpp>
+#include "../hlt/hlt.hpp"
+#include "../hlt/navigation.hpp"
 
 #include <string>
 
@@ -37,7 +37,7 @@ public:
         using namespace hlt;
 
         std::vector<Move> moves;
-        Log::log((std::string("Alive ships: ") + std::to_string(map.ship_map.at(this->id).size())).c_str());
+        Log::log(std::string("Alive ships: ") + std::to_string(map.ship_map.at(this->id).size()));
         for (const Ship& ship : map.ships.at(this->id)) {
             if (ship.docking_status != ShipDockingStatus::Undocked) {
                 continue;
@@ -54,7 +54,7 @@ public:
                 }
 
                 const possibly<Move> move =
-                        navigation::navigate_ship_to_dock(map, ship, planet, constants::MAX_SPEED / 2);
+                        navigation::navigate_ship_to_dock(map, ship, planet, constants::MAX_SPEED * 4 / 5);
                 if (move.second) {
                     moves.push_back(move.first);
                 }

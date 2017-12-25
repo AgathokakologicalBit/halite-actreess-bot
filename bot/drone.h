@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ship.hpp>
+#include "../hlt/ship.hpp"
 
 class Drone {
 public:

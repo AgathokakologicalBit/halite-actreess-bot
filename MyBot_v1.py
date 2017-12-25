@@ -11,7 +11,7 @@ Note: Please do not place print statements here as they are used to communicate 
 to log anything use the logging module.
 """
 # Let's start by importing the Halite Starter Kit so we can interface with the Halite engine
-import hlt
+import hlt_py as hlt
 # Then let's import the logging module so we can print out information
 import logging
 

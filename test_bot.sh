@@ -6,6 +6,8 @@ TEST_COUNT=50
 SCORE=0
 SCORE_MAX=$(( TEST_COUNT * (TEST_COUNT ** (PLAYERS_COUNT - 1) - 1) ))
 
+rm *.hlt
+
 for (( i=1; i<=$TEST_COUNT; i++ ))
 do
     GAME_RES=$(./run_game.sh | tail -n 2 | head -n 1 | awk '{ print $7 }')

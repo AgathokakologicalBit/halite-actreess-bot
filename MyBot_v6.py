@@ -1,4 +1,4 @@
-import hlt
+import hlt_py as hlt
 import logging
 from collections import namedtuple, OrderedDict
 
