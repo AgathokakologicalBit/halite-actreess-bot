@@ -1,0 +1,16 @@
+# Adscititious files ignore
+.idea
+CMakeFiles
+cmake-build-debug
+CMakeCache*
+cmake_install*
+
+# Halite files
+halite*
+*.hlt
+*.log
+
+# Others
+*.cbp
+*.zip
+*cache*
