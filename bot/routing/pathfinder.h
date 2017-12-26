@@ -63,7 +63,13 @@ public:
 
     /**
      * Computes the distance a point is from a line
-     * 
+     * @param line_start_x  the x of the starting point of the line
+     * @param line_start_y  the y of the starting point of the line
+     * @param line_end_x    the x of the ending point of the line
+     * @param line_end_y    the y of the ending point of the line
+     * @param point_x       the x of the point to measure from
+     * @param point_y       the y of the point to measure from
+     * @return              the distance from the point to the closest point on the line
     */
     static double point_distance_from_line(
         const double line_start_x,
