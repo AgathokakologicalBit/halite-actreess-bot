@@ -45,7 +45,9 @@ public:
 
     /**
      * Sorts a list of planets by their distance from an origin
-     * @param 
+     * @param list    list of planets to sort
+     * @param origin  origin point to sort planets from
+     * @return        a list of planets arranged from closest to farthest from the origin
     */
     static std::vector<hlt::Planet *> sort_by_distance(std::vector<hlt::Planet *> list, hlt::Location * origin)
     {
@@ -55,7 +57,7 @@ public:
     /**
      * Builds a graph of points for navigating around a provided list of obstacles from location origin to goal
      * @param origin   the starting location
-     * @param goal   the ending location
+     * @param goal     the ending location
      * @param planets  a list of planets to build points around
      * @return         a list of locations forming a graph around the obstacles with first point being origin and last being goal
     */
