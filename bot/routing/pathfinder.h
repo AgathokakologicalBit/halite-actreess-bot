@@ -45,8 +45,9 @@ public:
     static std::vector<hlt::Planet *> get_intersecting(hlt::Location * origin, hlt::Location * goal, std::vector<hlt::Planet *> planets)
     {
         std::vector<hlt::Planet *> intersecting_planets;
+        double distance_from_line;
         for (auto& planet : planets) {
-            double distance_from_line = point_distance_from_line(
+            distance_from_line = point_distance_from_line(
                 origin->pos_x,
                 origin->pos_y,
                 goal->pos_x,
