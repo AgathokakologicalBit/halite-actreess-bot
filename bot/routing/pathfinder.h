@@ -14,9 +14,22 @@ public:
      * @param right_most_point  a point that *must* be on the right. (or else negatives :( )
      * @return                  a list of all planets within bounding box
     */
-    static std::vector<hlt::Planet *> get_in_bounds(hlt::Location * left_most_point, hlt::Location * right_most_point)
+    static std::vector<const hlt::Planet *> get_in_bounds(hlt::Location * left_most_point, hlt::Location * right_most_point, const hlt::Map &map)
     {
+        std::vector<const hlt::Planet *> planets;
+        const double min_x = left_most_point->pos_x;
+        const double min_y = left_most_point->pos_y;
+        const double max_x = right_most_point->pos_x;
+        const double max_y = right_most_point->pos_y;
+        for (auto& planet : map.planets) {
+            if (planet.location.pos_x >= min_x && planet.location.pos_x <= max_x) {
+                if (planet.location.pos_y >= min_y && planet.location.pos_y <= max_y) {
+                    planets.push_back(&planet);
+                }
+            }
+        }
 
+        return planets;
     }
 
     /**
