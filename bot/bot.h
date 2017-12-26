@@ -63,7 +63,7 @@ public:
         std::vector<Move> moves;
         Log::log(std::string("Alive ships: ") + std::to_string(map.ship_map.at(this->id).size()));
 
-        // TO TEST ROUTER, UNCOMMENT THIS AND COMMENT ALL CODE BELOW **
+        /** TO TEST ROUTER, UNCOMMENT THIS AND COMMENT ALL CODE BELOW **
 
         std::vector<const Ship*> swarm;
 
@@ -74,7 +74,7 @@ public:
         const hlt::Location* target = &map.planets[0].location;
         router->move(&moves, swarm, target);
 
-        /*
+        */
         for (const Ship& ship : map.ships.at(this->id)) {
             if (ship.docking_status != ShipDockingStatus::Undocked) {
                 continue;
@@ -99,7 +99,6 @@ public:
                 break;
             }
         }
-        */
 
         return moves;
     }
