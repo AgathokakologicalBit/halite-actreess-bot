@@ -5,8 +5,9 @@
 #include <map>
 #include <string>
 
+#include "timer.h"
 #include "drone.h"
-#include "router.h"
+#include "bot/routing/router.h"
 #include "../hlt/hlt.hpp"
 #include "../hlt/navigation.hpp"
 
@@ -24,6 +25,8 @@ public:
     explicit Bot (hlt::Metadata data)
             : id(data.player_id)
     {
+        Timer $timer_bot_init("bot init");
+
         drones.resize(10000);
 
         for (const auto & p : data.initial_map.ships)
@@ -42,6 +45,8 @@ public:
     std::vector<hlt::Move> make_turn (const hlt::Map & map)
     {
         using namespace hlt;
+
+        Timer $timer_whole_turn("whole turn");
 
         for (auto * d : this->drones)
         {
@@ -79,8 +84,8 @@ public:
         std::vector<Move> moves;
         Log::log(std::string("Alive ships: ") + std::to_string(this->my_drones.size()));
 
+        Timer $timer_strategies_evaluation("strategies evaluation");
         std::vector<const Ship *> swarm;
-
         for (auto & drone : this->my_drones)
             swarm.push_back(&drone.second->ship);
 
