@@ -3,7 +3,7 @@
 int main() {
     using namespace hlt;
 
-    Bot bot(initialize("Actreess-8"));
+    Bot bot(initialize("Juice-0"));
     while (true) {
         const Map map = in::get_map();
         auto moves = bot.make_turn(map);
