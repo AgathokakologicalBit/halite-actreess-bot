@@ -34,8 +34,8 @@ public:
 
     /**
      * Creates a list of all planets intersecting a line from an origin to a goal
-     * @param origin   the location to start the line at.
-     * @param goal   the location to end the line at.
+     * @param origin    the location to start the line at.
+     * @param goal      the location to end the line at.
      * @return planets  the planets to check for intersection
     */
     static std::vector<hlt::Planet *> get_intersecting(hlt::Location * origin, hlt::Location * goal, std::vector<hlt::Planet *> planets)
