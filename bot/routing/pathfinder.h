@@ -3,9 +3,11 @@
 #include <vector>
 #include <algorithm>
 #include <math.h>
+#include <map>
 
 #include "../hlt/hlt.hpp"
 #include "path.h"
+#include "node.h"
 
 class Pathfinder
 {
@@ -108,7 +110,7 @@ public:
      * @param planets  a list of planets to build points around
      * @return         a list of locations forming a graph around the obstacles with first point being origin and last being goal
     */
-    static std::vector<hlt::Location *> build_graph(hlt::Location * origin, hlt::Location * goal, std::vector<hlt::Planet *> planets)
+    static std::map<int, Node *> build_graph(hlt::Location * origin, hlt::Location * goal, std::vector<hlt::Planet *> planets)
     {
 
     }
