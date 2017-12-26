@@ -43,7 +43,7 @@ public:
             if (d) d->life_state += 1;
 
         for (const auto& p : map.ships) {
-            for (const auto &s : p.second) {
+			for (const auto &s : p.second) {
                 if (!this->drones[s.entity_id]) {
                     this->drones[s.entity_id] = new Drone(s);
                     if (s.owner_id == this->id)
@@ -63,19 +63,18 @@ public:
         std::vector<Move> moves;
         Log::log(std::string("Alive ships: ") + std::to_string(map.ship_map.at(this->id).size()));
 
-		/** TO TEST ROUTER, UNCOMMENT THIS AND COMMENT ALL CODE BELOW **
+        // TO TEST ROUTER, UNCOMMENT THIS AND COMMENT ALL CODE BELOW **
 
-		std::vector<const Ship*> swarm;
+        std::vector<const Ship*> swarm;
 
-		for (std::map<int, Drone*>::iterator it = my_drones.begin(); it != my_drones.end(); ++it) {
-			swarm.push_back(&map.get_ship(id, it->first));
-		}
+        for (auto& drone : this-> my_drones) {
+            swarm.push_back(&map.get_ship(id, drone.second->ship.entity_id));
+        }
 
-		const hlt::Location* target = &map.planets[0].location;
-		router->move(&moves, swarm, target);
+        const hlt::Location* target = &map.planets[0].location;
+        router->move(&moves, swarm, target);
 
-		*/
-
+        /*
         for (const Ship& ship : map.ships.at(this->id)) {
             if (ship.docking_status != ShipDockingStatus::Undocked) {
                 continue;
@@ -100,6 +99,7 @@ public:
                 break;
             }
         }
+        */
 
         return moves;
     }

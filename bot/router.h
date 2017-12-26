@@ -13,10 +13,9 @@ public:
 		using namespace hlt;
 		Location* center = getFleetCenter(ships);
 		const Ship* centerShip = getClosestShip(center, ships);
-
 		double angle = centerShip->location.orient_towards_in_deg(*target);
 		for (const Ship* ship : ships) {
-			moves->push_back(Move::thrust(ship->entity_id, 7, angle));
+			moves->push_back(Move::thrust(ship->entity_id, hlt::constants::MAX_SPEED, angle));
 		}		
 	}
 
