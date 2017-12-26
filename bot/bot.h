@@ -3,12 +3,13 @@
 #include <cstddef>
 #include <list>
 #include <map>
+#include <string>
 
 #include "drone.h"
+#include "router.h"
 #include "../hlt/hlt.hpp"
 #include "../hlt/navigation.hpp"
 
-#include <string>
 
 class Bot final {
 public:
@@ -16,6 +17,8 @@ public:
 
     std::vector<Drone*> drones;
     std::map<int, Drone*> my_drones;
+
+	Router *router = new Router();
 
     explicit Bot(hlt::Metadata data)
             : id(data.player_id)
@@ -59,6 +62,20 @@ public:
 
         std::vector<Move> moves;
         Log::log(std::string("Alive ships: ") + std::to_string(map.ship_map.at(this->id).size()));
+
+		/** TO TEST ROUTER, UNCOMMENT THIS AND COMMENT ALL CODE BELOW **
+
+		std::vector<const Ship*> swarm;
+
+		for (std::map<int, Drone*>::iterator it = my_drones.begin(); it != my_drones.end(); ++it) {
+			swarm.push_back(&map.get_ship(id, it->first));
+		}
+
+		const hlt::Location* target = &map.planets[0].location;
+		router->move(&moves, swarm, target);
+
+		*/
+
         for (const Ship& ship : map.ships.at(this->id)) {
             if (ship.docking_status != ShipDockingStatus::Undocked) {
                 continue;
