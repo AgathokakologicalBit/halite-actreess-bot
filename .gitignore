@@ -18,9 +18,12 @@ halite*
 /MyBot.sln
 /MyBot.vcxproj
 /MyBot.vcxproj.filters
+/.vs/
+
+# Windows Run Support
+*.bat
 
 # Others
 *.cbp
 *.zip
 *cache*
-/.vs/
