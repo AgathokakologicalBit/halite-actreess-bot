@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <math.h>
 
 #include "../hlt/hlt.hpp"
 #include "path.h"
@@ -41,7 +42,47 @@ public:
     */
     static std::vector<hlt::Planet *> get_intersecting(hlt::Location * origin, hlt::Location * goal, std::vector<hlt::Planet *> planets)
     {
-        
+        std::vector<hlt::Planet *> intersecting_planets;
+        for (auto& planet : planets) {
+            double distance_from_line = point_distance_from_line(
+                origin->pos_x,
+                origin->pos_y,
+                goal->pos_x,
+                goal->pos_y,
+                planet->location.pos_x,
+                planet->location.pos_y
+            );
+
+            if (distance_from_line <= planet->radius) {
+                intersecting_planets.push_back(planet);
+            }
+        }
+
+        return intersecting_planets;
+    }
+
+    /**
+     * Computes the distance a point is from a line
+     * 
+    */
+    static double point_distance_from_line(
+        const double line_start_x,
+        const double line_start_y,
+        const double line_end_x,
+        const double line_end_y,
+        const double point_x,
+        const double point_y
+    )
+    {
+        return std::abs(
+            (line_end_y - line_start_y) * point_x +
+            (line_start_x - line_end_x) * point_y +
+            (line_start_y - line_end_y) * point_x +
+            (line_start_x - line_end_x) * point_y
+        ) / std::sqrt(
+            std::pow((line_end_y - line_start_y), 2.0) +
+            std::pow((line_start_x - line_end_x), 2.0)
+        );
     }
 
     /**
