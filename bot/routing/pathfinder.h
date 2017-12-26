@@ -41,7 +41,7 @@ public:
     */
     static std::vector<hlt::Planet *> get_intersecting(hlt::Location * origin, hlt::Location * goal, std::vector<hlt::Planet *> planets)
     {
-        std::sort(planets.begin(), planets.end(), new distance_sorter(origin));
+        
     }
 
     /**
@@ -50,9 +50,9 @@ public:
      * @param origin  origin point to sort planets from
      * @return        a list of planets arranged from closest to farthest from the origin
     */
-    static std::vector<hlt::Planet *> sort_by_distance(std::vector<hlt::Planet *> list, hlt::Location * origin)
+    static std::vector<hlt::Planet *> sort_by_distance(std::vector<hlt::Planet *> planets, hlt::Location * origin)
     {
-
+        std::sort(planets.begin(), planets.end(), new distance_sorter(origin));
     }
 
     /**
