@@ -48,9 +48,8 @@ public:
      * Sorts a list of planets by their distance from an origin
      * @param list    list of planets to sort
      * @param origin  origin point to sort planets from
-     * @return        a list of planets arranged from closest to farthest from the origin
     */
-    static std::vector<hlt::Planet *> sort_by_distance(std::vector<hlt::Planet *> planets, hlt::Location * origin)
+    static void sort_by_distance(std::vector<hlt::Planet *> planets, hlt::Location * origin)
     {
         std::sort(planets.begin(), planets.end(), new distance_sorter(origin));
     }
