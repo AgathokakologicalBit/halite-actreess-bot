@@ -8,7 +8,7 @@
 class Pathfinder
 {
 public:
-    /*
+    /**
      * Creates a list of all planets within a bounding box formed by two locations.
      * @param left_most_point   a point that *must* be on the left. (or else negatives :( )
      * @param right_most_point  a point that *must* be on the right. (or else negatives :( )
@@ -19,7 +19,7 @@ public:
 
     }
 
-    /*
+    /**
      * Creates a list of all planets intersecting a line from an origin to a goal
      * @param origin   the location to start the line at.
      * @param goal   the location to end the line at.
@@ -30,7 +30,7 @@ public:
 
     }
 
-    /*
+    /**
      * Sorts a list of planets by their distance from an origin
      * @param 
     */
@@ -39,7 +39,7 @@ public:
 
     }
 
-    /*
+    /**
      * Builds a graph of points for navigating around a provided list of obstacles from location origin to goal
      * @param origin   the starting location
      * @param goal   the ending location
@@ -51,7 +51,7 @@ public:
 
     }
 
-    /*
+    /**
      * Finds the optimal path along a graph of points where the first point is the origin and the last point is the goal
      * @param path  the list of locations forming the graph where the first is the origin location and the last is the goal
      * @return      a path object
