@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <algorithm>
 
 #include "../hlt/hlt.hpp"
 #include "path.h"
@@ -40,7 +41,7 @@ public:
     */
     static std::vector<hlt::Planet *> get_intersecting(hlt::Location * origin, hlt::Location * goal, std::vector<hlt::Planet *> planets)
     {
-
+        std::sort(planets.begin(), planets.end(), new distance_sorter(origin));
     }
 
     /**
@@ -75,4 +76,22 @@ public:
     {
 
     }
+
+private:
+    /**
+     * Object used by std::sort to sort planet's based on their distance from an origin point
+    */
+    struct distance_sorter {
+        hlt::Location * origin;
+        distance_sorter(hlt::Location * origin) {
+            this->origin = origin;
+        }
+
+        /**
+         * Function that computes if a planet is closer or farther to the origin than another (used by std::sort)
+        */
+        bool operator () (hlt::Planet * first, hlt::Planet * second) {
+            return first->location.get_distance_to(*this->origin) < second->location.get_distance_to(*this->origin);
+        }
+    };
 };
