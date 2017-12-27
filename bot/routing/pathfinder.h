@@ -109,9 +109,10 @@ public:
      * @param origin   the starting location
      * @param goal     the ending location
      * @param planets  a list of planets to build points around
+     * @param padding  the padding to place between the graph nodes and the planets (0 would be right on the surface)
      * @return         a list of locations forming a graph around the obstacles with first point being origin and last being goal
     */
-    static std::map<std::string, Node *> build_graph(hlt::Location * origin, hlt::Location * goal, std::vector<hlt::Planet *> planets)
+    static std::map<std::string, Node *> build_graph(hlt::Location * origin, hlt::Location * goal, std::vector<hlt::Planet *> planets, const double padding)
     {
         std::map<std::string, Node *> graph;
 
@@ -133,7 +134,7 @@ public:
             id = planets[i]->entity_id;
             if (i == 0)
             {
-                std::vector<Node *> edge_points = get_edge_points(origin, planets[i]);
+                std::vector<Node *> edge_points = get_edge_points(origin, planets[i], padding);
                 for (Node * edge_point : edge_points)
                 {
                     edge_point->connect("start");
@@ -142,7 +143,7 @@ public:
                 }
             }
             else {
-                std::vector<Node *> edge_points = get_edge_points(origin, planets[i]);
+                std::vector<Node *> edge_points = get_edge_points(origin, planets[i], padding);
                 for (Node * edge_point : edge_points)
                 {
                     edge_point->connect(previous_nodes[previous_nodes.size() - 1]);
@@ -171,14 +172,21 @@ public:
         return graph;
     }
 
-    static std::vector<Node *> get_edge_points(hlt::Location * origin, hlt::Planet * planet)
+    /**
+     * Get's the edge points around the circumference of a sphere
+     * @param origin   the origin location to calculate from
+     * @param planet   the planet to compute edge points against
+     * @param padding  how far the edge points should be from the planet surface
+     * @return         a pair of nodes; the edge points on the sphere perpendicular to the line from the origin to the planet
+    */
+    static std::vector<Node *> get_edge_points(hlt::Location * origin, hlt::Planet * planet, const double padding)
     {
-        std::vector<Node *> edge_points;
+        std::vector<Node *> edge_points(2);
 
         const double angle_from_horizon = origin->orient_towards_in_rad(planet->location);
         const double distance_to_center = origin->get_distance_to(planet->location);
         // we use arctan instead of arctan2 beacuse we only want the small angle
-        const double tangent_angle = atan(planet->radius / distance_to_center);
+        const double tangent_angle = atan((planet->radius + padding) / distance_to_center);
         const double tangent_length = distance_to_center / cos(tangent_angle);
         const double node_x = tangent_length * std::sin(tangent_angle + angle_from_horizon);
         const double node_y = tangent_length * std::cos(tangent_angle + angle_from_horizon);
@@ -201,7 +209,6 @@ public:
     {
         
     }
-
 
 private:
     /**
