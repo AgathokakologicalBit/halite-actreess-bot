@@ -4,7 +4,7 @@
 
 namespace hlt {
     std::ostream& operator<<(std::ostream& out, const Location& location) {
-        out << '(' << location.pos_x << ", " << location.pos_y << ')';
+        out << '(' << location.x << ", " << location.y << ')';
         return out;
     }
 }

@@ -10,6 +10,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O2 -Wall -Wno-unused-function -pedan
 
 include_directories(${CMAKE_SOURCE_DIR}/hlt)
 include_directories(${CMAKE_SOURCE_DIR}/bot)
+include_directories(${CMAKE_SOURCE_DIR}/bot/routing)
+include_directories(${CMAKE_SOURCE_DIR}/bot/debug)
 
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 

@@ -7,11 +7,11 @@
 
 namespace hlt {
     struct Location {
-        double pos_x, pos_y;
+        double x, y;
 
         double get_distance_to(const Location& target) const {
-            const double dx = pos_x - target.pos_x;
-            const double dy = pos_y - target.pos_y;
+            const double dx = x - target.x;
+            const double dy = y - target.y;
             return std::sqrt(dx*dx + dy*dy);
         }
 
@@ -20,8 +20,8 @@ namespace hlt {
         }
 
         double orient_towards_in_rad(const Location& target) const {
-            const double dx = target.pos_x - pos_x;
-            const double dy = target.pos_y - pos_y;
+            const double dx = target.x - x;
+            const double dy = target.y - y;
 
             return std::atan2(dy, dx) + 2 * M_PI;
         }
@@ -30,8 +30,8 @@ namespace hlt {
             const double radius = target_radius + constants::MIN_DISTANCE_FOR_CLOSEST_POINT;
             const double angle_rad = target.orient_towards_in_rad(*this);
 
-            const double x = target.pos_x + radius * std::cos(angle_rad);
-            const double y = target.pos_y + radius * std::sin(angle_rad);
+            const double x = target.x + radius * std::cos(angle_rad);
+            const double y = target.y + radius * std::sin(angle_rad);
 
             return { x, y };
         }
@@ -40,6 +40,6 @@ namespace hlt {
     };
 
     static bool operator==(const Location& l1, const Location& l2) {
-        return l1.pos_x == l2.pos_x && l1.pos_y == l2.pos_y;
+        return l1.x == l2.x && l1.y == l2.y;
     }
 }

@@ -36,12 +36,12 @@ public:
 
         for (auto & ship : ships)
         {
-            center.pos_x += ship->location.pos_x;
-            center.pos_y += ship->location.pos_y;
+            center.x += ship->location.x;
+            center.y += ship->location.y;
         }
 
-        center.pos_x /= ships.size();
-        center.pos_y /= ships.size();
+        center.x /= ships.size();
+        center.y /= ships.size();
 
         return center;
     }

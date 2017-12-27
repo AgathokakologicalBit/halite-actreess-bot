@@ -5,7 +5,7 @@
 #include <utility>
 #include <chrono>
 
-#include "../hlt/log.hpp"
+#include "log.hpp"
 
 class Timer
 {

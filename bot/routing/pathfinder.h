@@ -25,17 +25,17 @@ public:
         std::vector<const hlt::Planet *> planets;
 
         // create references to positions for convenience and clarity
-        auto const min_x = left_most_point.pos_x;
-        auto const min_y = left_most_point.pos_y;
-        auto const max_x = right_most_point.pos_x;
-        auto const max_y = right_most_point.pos_y;
+        auto const min_x = left_most_point.x;
+        auto const min_y = left_most_point.y;
+        auto const max_x = right_most_point.x;
+        auto const max_y = right_most_point.y;
 
         // iterate over planets adding the ones that are in bounds
         for (auto & planet : map.planets)
         {
-            if (planet.location.pos_x >= min_x && planet.location.pos_x <= max_x)
+            if (planet.location.x >= min_x && planet.location.x <= max_x)
             {
-                if (planet.location.pos_y >= min_y && planet.location.pos_y <= max_y)
+                if (planet.location.y >= min_y && planet.location.y <= max_y)
                 {
                     planets.push_back(&planet);
                 }
@@ -61,12 +61,12 @@ public:
         for (auto & planet : planets)
         {
             distance_from_line = point_distance_from_line(
-                    origin.pos_x,
-                    origin.pos_y,
-                    goal.pos_x,
-                    goal.pos_y,
-                    planet.location.pos_x,
-                    planet.location.pos_y
+                    origin.x,
+                    origin.y,
+                    goal.x,
+                    goal.y,
+                    planet.location.x,
+                    planet.location.y
             );
 
             // if the distance from the planet center to the line is >= the planet's radius
@@ -141,8 +141,8 @@ public:
         // add origin to the graph
         graph.insert(std::pair<std::string, Node *>("start", new Node(
                 "start",
-                origin.pos_x,
-                origin.pos_y
+                origin.x,
+                origin.y
         )));
 
         std::vector<std::string> previous_nodes;
@@ -159,13 +159,7 @@ public:
             {
                 for (Node * edge_point : edge_points)
                 {
-                    hlt::Log::log(
-                            "[Line] " +
-                            std::to_string(edge_point->x) + ' ' +
-                            std::to_string(edge_point->y) + ' ' +
-                            std::to_string(graph["start"]->x) + ' ' +
-                            std::to_string(graph["start"]->y)
-                    );
+                    Gizmos::line(edge_point, graph["start"]);
 
                     edge_point->connect("start");
                     previous_nodes.push_back(edge_point->id);
@@ -177,20 +171,9 @@ public:
             {
                 for (Node * edge_point : edge_points)
                 {
-                    hlt::Log::log(
-                            "[Line] " +
-                            std::to_string(edge_point->x) + ' ' +
-                            std::to_string(edge_point->y) + ' ' +
-                            std::to_string(graph[previous_nodes[previous_nodes.size() - 1]]->x) + ' ' +
-                            std::to_string(graph[previous_nodes[previous_nodes.size() - 1]]->y)
-                    );
-                    hlt::Log::log(
-                            "[Line] " +
-                            std::to_string(edge_point->x) + ' ' +
-                            std::to_string(edge_point->y) + ' ' +
-                            std::to_string(graph[previous_nodes[previous_nodes.size() - 2]]->x) + ' ' +
-                            std::to_string(graph[previous_nodes[previous_nodes.size() - 2]]->y)
-                    );
+                    Gizmos::line(edge_point, graph[previous_nodes[previous_nodes.size() - 1]]);
+                    Gizmos::line(edge_point, graph[previous_nodes[previous_nodes.size() - 2]]);
+
                     edge_point->connect(previous_nodes[previous_nodes.size() - 1]);
                     edge_point->connect(previous_nodes[previous_nodes.size() - 2]);
                     graph[edge_point->id] = edge_point;
@@ -206,8 +189,8 @@ public:
         // add the goal node
         Node * goalNode = new Node(
                 "end",
-                goal.pos_x,
-                goal.pos_y
+                goal.x,
+                goal.y
         );
 
         // connect the goal node to the previous two planets' edge nodes
@@ -237,8 +220,8 @@ public:
         const double tangent_length = distance_to_center / cos(tangent_angle);
         const double node_x = tangent_length * std::sin(tangent_angle + angle_from_horizon);
         const double node_y = tangent_length * std::cos(tangent_angle + angle_from_horizon);
-        const double opposite_node_x = planet.location.pos_x + (node_x - planet.location.pos_x);
-        const double opposite_node_y = planet.location.pos_y + (node_y - planet.location.pos_y);
+        const double opposite_node_x = planet.location.x + (node_x - planet.location.x);
+        const double opposite_node_y = planet.location.y + (node_y - planet.location.y);
 
         // add the edge points to the vector
         // id has either a or b prepended: a for above, b for below

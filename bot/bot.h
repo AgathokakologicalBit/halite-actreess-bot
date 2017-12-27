@@ -6,7 +6,8 @@
 #include <string>
 
 
-#include "timer.h"
+#include "debug/gizmos.h"
+#include "debug/timer.h"
 #include "drone.h"
 #include "routing/router.h"
 #include "routing/pathfinder.h"
@@ -96,7 +97,7 @@ public:
 
         double max_radius = 0;
         static hlt::Location target{ 0, 0 };
-        if (!target.pos_x)
+        if (!target.x)
         {
             hlt::Planet new_target;
             auto first_drone = this->my_drones.begin()->second->ship.location;
@@ -111,13 +112,13 @@ public:
         }
 
         auto center = Router::get_fleet_center(swarm);
-        hlt::Log::log(
-                "[Line] " +
-                std::to_string(target.pos_x) + ' ' +
-                std::to_string(target.pos_y) + ' ' +
-                std::to_string(center.pos_x) + ' ' +
-                std::to_string(center.pos_y)
-        );
+
+        Gizmos::set_color(0xFF5533);
+        Gizmos::set_width(4);
+        Gizmos::line(center, target);
+        Gizmos::set_width(1);
+        Gizmos::set_color(0xFFFFFF);
+
         auto path = PathFinder::build_graph(
                 center, target,
                 PathFinder::sort_by_distance(map.planets, center),
