@@ -111,9 +111,85 @@ public:
      * @param planets  a list of planets to build points around
      * @return         a list of locations forming a graph around the obstacles with first point being origin and last being goal
     */
-    static std::map<int, Node *> build_graph(hlt::Location * origin, hlt::Location * goal, std::vector<hlt::Planet *> planets)
+    static std::map<std::string, Node *> build_graph(hlt::Location * origin, hlt::Location * goal, std::vector<hlt::Planet *> planets)
     {
+        std::map<std::string, Node *> graph;
 
+        // add origin
+        graph.insert(std::pair<std::string, Node *>("start", new Node(
+            "start",
+            origin->pos_x,
+            origin->pos_y
+        )));
+
+        int id;
+        
+        double distance_to_center;
+
+        std::vector<std::string> previous_nodes(planets.size());
+
+        for (int i = 0; i < planets.size(); i++)
+        {
+            id = planets[i]->entity_id;
+            if (i == 0)
+            {
+                std::vector<Node *> edge_points = get_edge_points(origin, planets[i]);
+                for (Node * edge_point : edge_points)
+                {
+                    edge_point->connect("start");
+                    previous_nodes.push_back(edge_point->id);
+                    graph.insert(std::pair<std::string, Node *>(edge_point->id, edge_point));
+                }
+            }
+            else {
+                std::vector<Node *> edge_points = get_edge_points(origin, planets[i]);
+                for (Node * edge_point : edge_points)
+                {
+                    edge_point->connect(previous_nodes[previous_nodes.size() - 1]);
+                    edge_point->connect(previous_nodes[previous_nodes.size() - 2]);
+                    graph.insert(std::pair<std::string, Node *>(edge_point->id, edge_point));
+                }
+
+                for (Node * edge_point : edge_points)
+                {
+                    previous_nodes.push_back(edge_point->id);
+                }
+            }
+        }
+        
+        // add goal
+        Node * goalNode = new Node(
+            "end",
+            goal->pos_x,
+            goal->pos_y
+        );
+
+        goalNode->connect(previous_nodes[previous_nodes.size() - 1]);
+        goalNode->connect(previous_nodes[previous_nodes.size() - 2]);
+        graph.insert(std::pair<std::string, Node *>("end", goalNode));
+
+        return graph;
+    }
+
+    static std::vector<Node *> get_edge_points(hlt::Location * origin, hlt::Planet * planet)
+    {
+        std::vector<Node *> edge_points;
+
+        const double angle_from_horizon = origin->orient_towards_in_rad(planet->location);
+        const double distance_to_center = origin->get_distance_to(planet->location);
+        // we use arctan instead of arctan2 beacuse we only want the small angle
+        const double tangent_angle = atan(planet->radius / distance_to_center);
+        const double tangent_length = distance_to_center / cos(tangent_angle);
+        const double node_x = tangent_length * std::sin(tangent_angle + angle_from_horizon);
+        const double node_y = tangent_length * std::cos(tangent_angle + angle_from_horizon);
+        const double opposite_node_x = planet->location.pos_x + (node_x - planet->location.pos_x);
+        const double opposite_node_y = planet->location.pos_y + (node_y - planet->location.pos_y);
+
+        // a for above, b for below
+        edge_points.push_back(new Node(planet->entity_id + "a", node_x, node_y));
+        edge_points.push_back(new Node(planet->entity_id + "b", opposite_node_x, opposite_node_y));
+
+        return edge_points;
     }
 
     /**
@@ -123,8 +199,9 @@ public:
     */
     static Path * find_optimal_path(std::vector<hlt::Location *> path)
     {
-
+        
     }
+
 
 private:
     /**

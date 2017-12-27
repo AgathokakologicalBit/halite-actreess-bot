@@ -1,21 +1,28 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 class Node
 {
+
 public:
-    int id;
+    std::string id;
 
     double x;
     double y;
 
-    std::vector<int> connected;
+    std::vector<std::string> connected;
 
-    Node(int id, double x, double y)
+    Node(std::string id, double x, double y)
     {
         this->id = id;
         this->x = x;
         this->y = y;
+    }
+
+    void connect(std::string id)
+    {
+        connected.push_back(id);
     }
 };
