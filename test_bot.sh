@@ -21,7 +21,7 @@ do
     SCORE=$(( SCORE + TEST_COUNT ** (GAME_RES - 1) - 1 ))
 done
 
-ERRORS_COUNT=$( find \d+-*.log 2>/dev/null | wc -l )
+ERRORS_COUNT=$( find 0-*.log 2>/dev/null | wc -l )
 SCORE=$(( SCORE - ERRORS_COUNT * TEST_COUNT ** PLAYERS_COUNT ))
 
 echo
