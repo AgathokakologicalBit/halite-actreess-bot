@@ -7,7 +7,7 @@
 
 #include "timer.h"
 #include "drone.h"
-#include "bot/routing/router.h"
+#include "routing/router.h"
 #include "../hlt/hlt.hpp"
 #include "../hlt/navigation.hpp"
 

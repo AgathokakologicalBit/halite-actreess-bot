@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <algorithm>
-#include <math.h>
+#include <cmath>
 #include <map>
 
 #include "../hlt/hlt.hpp"
@@ -19,15 +19,15 @@ public:
      * @return                  a list of all planets within bounding box
     */
     static std::vector<const hlt::Planet *>
-    get_in_bounds (hlt::Location * left_most_point, hlt::Location * right_most_point, const hlt::Map & map)
+    get_in_bounds (hlt::Location left_most_point, hlt::Location right_most_point, const hlt::Map & map) const
     {
         std::vector<const hlt::Planet *> planets;
 
         // create references to positions for convenience and clarity
-        auto const min_x = left_most_point->pos_x;
-        auto const min_y = left_most_point->pos_y;
-        auto const max_x = right_most_point->pos_x;
-        auto const max_y = right_most_point->pos_y;
+        auto const min_x = left_most_point.pos_x;
+        auto const min_y = left_most_point.pos_y;
+        auto const max_x = right_most_point.pos_x;
+        auto const max_y = right_most_point.pos_y;
 
         // iterate over planets adding the ones that are in bounds
         for (auto & planet : map.planets)
@@ -118,7 +118,7 @@ public:
     static void sort_by_distance (std::vector<hlt::Planet *> & planets, hlt::Location origin)
     {
         // use a custom sorter to sort planets from closest to farthest
-        std::sort(planets.begin(), planets.end(), new distance_sorter(origin));
+        std::sort(planets.begin(), planets.end(), distance_sorter(origin));
     }
 
     /**
@@ -130,7 +130,7 @@ public:
      * @return         a list of locations forming a graph around the obstacles with first point being origin and last being goal
     */
     static std::map<std::string, Node *>
-    build_graph (hlt::Location origin, hlt::Location goal, std::vector<hlt::Planet *> planets, const double padding)
+    build_graph (hlt::Location origin, hlt::Location goal, std::vector<hlt::Planet *> const & planets, const double padding)
     {
         std::map<std::string, Node *> graph;
 
@@ -240,19 +240,18 @@ private:
     /**
      * Object used by std::sort to sort planet's based on their distance from an origin point
     */
-    struct distance_sorter
+    struct distance_sorter final
     {
         hlt::Location origin;
 
-        distance_sorter (hlt::Location origin)
-        {
-            this->origin = origin;
-        }
+        explicit distance_sorter (hlt::Location origin)
+                : origin(origin)
+        { }
 
         /**
          * Function that computes if a planet is closer or farther to the origin than another (used by std::sort)
         */
-        bool operator () (hlt::Planet * first, hlt::Planet * second)
+        bool operator () (hlt::Planet const * const first, hlt::Planet const * const second) const
         {
             return first->location.get_distance_to(this->origin) < second->location.get_distance_to(this->origin);
         }

@@ -10,7 +10,7 @@ class Path
 {
 public:
     std::vector<hlt::Location> waypoints;
-    std::vector<hlt::Location *> original_graph;
+    std::vector<hlt::Location> original_graph;
 
     Path ()
             : waypoints()

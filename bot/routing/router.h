@@ -4,8 +4,8 @@
 #include <string>
 #include <map>
 
-#include "bot/drone.h"
-#include "hlt.hpp"
+#include "../drone.h"
+#include "../../hlt/hlt.hpp"
 
 class Router
 {
@@ -32,7 +32,7 @@ public:
      */
     static hlt::Location get_fleet_center (std::vector<hlt::Ship const *> & ships)
     {
-        hlt::Location center;
+        hlt::Location center{ 0, 0 };
 
         for (auto & ship : ships)
         {
