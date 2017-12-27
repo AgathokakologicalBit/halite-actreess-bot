@@ -23,10 +23,10 @@ public:
         std::vector<const hlt::Planet *> planets;
 
         // create references to positions for convenience and clarity
-        const double & min_x = left_most_point->pos_x;
-        const double & min_y = left_most_point->pos_y;
-        const double & max_x = right_most_point->pos_x;
-        const double & max_y = right_most_point->pos_y;
+        auto const min_x = left_most_point->pos_x;
+        auto const min_y = left_most_point->pos_y;
+        auto const max_x = right_most_point->pos_x;
+        auto const max_y = right_most_point->pos_y;
 
         // iterate over planets adding the ones that are in bounds
         for (auto & planet : map.planets)

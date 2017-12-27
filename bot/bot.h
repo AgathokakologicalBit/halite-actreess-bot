@@ -33,7 +33,7 @@ public:
         {
             for (const auto & s : p.second)
             {
-                Drone * d = new Drone(s);
+                auto d = new Drone(s);
 
                 this->drones[s.entity_id] = d;
                 if (this->id == p.first)
@@ -48,7 +48,7 @@ public:
 
         Timer $timer_whole_turn("whole turn");
 
-        for (auto * d : this->drones)
+        for (auto d : this->drones)
         {
             if (!d) break;
             d->life_state = 1;
@@ -71,7 +71,7 @@ public:
             }
         }
 
-        for (auto * d : this->drones)
+        for (auto d : this->drones)
         {
             if (!d) break;
             if (d->life_state != 1) continue;
@@ -86,7 +86,7 @@ public:
 
         Timer $timer_strategies_evaluation("strategies evaluation");
         std::vector<const Ship *> swarm;
-        for (auto & drone : this->my_drones)
+        for (auto drone : this->my_drones)
             swarm.push_back(&drone.second->ship);
 
         const hlt::Location target = map.planets[0].location;
