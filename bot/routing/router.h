@@ -10,7 +10,7 @@
 class Router
 {
 public:
-    void move (std::vector<hlt::Move> & moves, std::vector<hlt::Ship const *> ships, hlt::Location const target)
+    void move (std::vector<hlt::Move> & moves, std::vector<hlt::Ship const *> & ships, hlt::Location const target)
     {
         using namespace hlt;
 
@@ -30,7 +30,7 @@ public:
      * @param ships      vector containing the id's of the ships to pick a center from
      * @return           location of the middle of the fleet
      */
-    static hlt::Location get_fleet_center (std::vector<hlt::Ship const *> ships)
+    static hlt::Location get_fleet_center (std::vector<hlt::Ship const *> & ships)
     {
         hlt::Location center;
 
@@ -52,7 +52,7 @@ public:
      * @param ships     A list of ships closest to
      * @return          Ship object closest to point
     */
-    static const hlt::Ship * get_closest_ship (hlt::Location location, std::vector<hlt::Ship const *> ships)
+    static const hlt::Ship * get_closest_ship (hlt::Location location, std::vector<hlt::Ship const *> & ships)
     {
         const hlt::Ship * closest = ships[0];
         double best_distance = closest->location.get_distance_to(location);

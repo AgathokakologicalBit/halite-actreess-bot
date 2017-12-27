@@ -17,12 +17,12 @@ public:
     { }
 
 public:
-    void add(hlt::Location const location)
+    void add (hlt::Location const location)
     {
         waypoints.push_back(location);
     }
 
-    void insert(std::size_t index, hlt::Location const location)
+    void insert (std::size_t index, hlt::Location const location)
     {
         assert(index < waypoints.size());
         waypoints.insert(waypoints.begin() + index, location);

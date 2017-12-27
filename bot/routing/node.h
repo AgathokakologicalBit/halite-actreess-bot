@@ -1,5 +1,7 @@
 #pragma once
 
+
+#include <utility>
 #include <vector>
 #include <string>
 
@@ -14,14 +16,13 @@ public:
 
     std::vector<std::string> connected;
 
-    Node(std::string id, double x, double y)
-    {
-        this->id = id;
-        this->x = x;
-        this->y = y;
-    }
+    Node (std::string id, double x, double y)
+            : id(std::move(id))
+            , x(x)
+            , y(y)
+    { }
 
-    void connect(std::string id)
+    void connect (std::string const & id)
     {
         connected.push_back(id);
     }
