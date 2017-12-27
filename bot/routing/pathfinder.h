@@ -21,13 +21,20 @@ public:
     static std::vector<const hlt::Planet *> get_in_bounds(hlt::Location * left_most_point, hlt::Location * right_most_point, const hlt::Map &map)
     {
         std::vector<const hlt::Planet *> planets;
-        const double min_x = left_most_point->pos_x;
-        const double min_y = left_most_point->pos_y;
-        const double max_x = right_most_point->pos_x;
-        const double max_y = right_most_point->pos_y;
-        for (auto& planet : map.planets) {
-            if (planet.location.pos_x >= min_x && planet.location.pos_x <= max_x) {
-                if (planet.location.pos_y >= min_y && planet.location.pos_y <= max_y) {
+
+        // create references to positions for convenience and clarity
+        const double & min_x = left_most_point->pos_x;
+        const double & min_y = left_most_point->pos_y;
+        const double & max_x = right_most_point->pos_x;
+        const double & max_y = right_most_point->pos_y;
+
+        // iterate over planets adding the ones that are in bounds
+        for (auto & planet : map.planets)
+        {
+            if (planet.location.pos_x >= min_x && planet.location.pos_x <= max_x)
+            {
+                if (planet.location.pos_y >= min_y && planet.location.pos_y <= max_y)
+                {
                     planets.push_back(&planet);
                 }
             }
@@ -45,8 +52,11 @@ public:
     static std::vector<hlt::Planet *> get_intersecting(hlt::Location * origin, hlt::Location * goal, std::vector<hlt::Planet *> planets)
     {
         std::vector<hlt::Planet *> intersecting_planets;
+
         double distance_from_line;
-        for (auto& planet : planets) {
+
+        for (auto & planet : planets)
+        {
             distance_from_line = point_distance_from_line(
                 origin->pos_x,
                 origin->pos_y,
@@ -56,7 +66,10 @@ public:
                 planet->location.pos_y
             );
 
-            if (distance_from_line <= planet->radius) {
+            // if the distance from the planet center to the line is >= the planet's radius
+            // then we add it to the intersection vector
+            if (distance_from_line <= planet->radius)
+            {
                 intersecting_planets.push_back(planet);
             }
         }
@@ -66,6 +79,7 @@ public:
 
     /**
      * Computes the distance a point is from a line
+     * Adapted from: https://math.stackexchange.com/questions/275529/check-if-line-intersects-with-circles-perimeter
      * @param line_start_x  the x of the starting point of the line
      * @param line_start_y  the y of the starting point of the line
      * @param line_end_x    the x of the ending point of the line
@@ -101,6 +115,7 @@ public:
     */
     static void sort_by_distance(std::vector<hlt::Planet *> planets, hlt::Location * origin)
     {
+        // use a custom sorter to sort planets from closest to farthest
         std::sort(planets.begin(), planets.end(), new distance_sorter(origin));
     }
 
@@ -116,7 +131,7 @@ public:
     {
         std::map<std::string, Node *> graph;
 
-        // add origin
+        // add origin to the graph
         graph.insert(std::pair<std::string, Node *>("start", new Node(
             "start",
             origin->pos_x,
@@ -129,9 +144,13 @@ public:
 
         std::vector<std::string> previous_nodes(planets.size());
 
+        // iterate through the planets from closest to farthest computing their edge points and connecting
+        // the nodes to form a graph
         for (int i = 0; i < planets.size(); i++)
         {
             id = planets[i]->entity_id;
+
+            // the first planet process will be connected to our start node
             if (i == 0)
             {
                 std::vector<Node *> edge_points = get_edge_points(origin, planets[i], padding);
@@ -142,6 +161,7 @@ public:
                     graph.insert(std::pair<std::string, Node *>(edge_point->id, edge_point));
                 }
             }
+            // every sequential planet is connected to the previous two planets' edge nodes
             else {
                 std::vector<Node *> edge_points = get_edge_points(origin, planets[i], padding);
                 for (Node * edge_point : edge_points)
@@ -158,13 +178,14 @@ public:
             }
         }
         
-        // add goal
+        // add the goal node
         Node * goalNode = new Node(
             "end",
             goal->pos_x,
             goal->pos_y
         );
 
+        // connect the goal node to the previous two planets' edge nodes
         goalNode->connect(previous_nodes[previous_nodes.size() - 1]);
         goalNode->connect(previous_nodes[previous_nodes.size() - 2]);
         graph.insert(std::pair<std::string, Node *>("end", goalNode));
@@ -193,7 +214,8 @@ public:
         const double opposite_node_x = planet->location.pos_x + (node_x - planet->location.pos_x);
         const double opposite_node_y = planet->location.pos_y + (node_y - planet->location.pos_y);
 
-        // a for above, b for below
+        // add the edge points to the vector
+        // id has either a or b prepended: a for above, b for below
         edge_points.push_back(new Node(planet->entity_id + "a", node_x, node_y));
         edge_points.push_back(new Node(planet->entity_id + "b", opposite_node_x, opposite_node_y));
 
@@ -214,16 +236,19 @@ private:
     /**
      * Object used by std::sort to sort planet's based on their distance from an origin point
     */
-    struct distance_sorter {
+    struct distance_sorter
+    {
         hlt::Location * origin;
-        distance_sorter(hlt::Location * origin) {
+        distance_sorter(hlt::Location * origin)
+        {
             this->origin = origin;
         }
 
         /**
          * Function that computes if a planet is closer or farther to the origin than another (used by std::sort)
         */
-        bool operator () (hlt::Planet * first, hlt::Planet * second) {
+        bool operator () (hlt::Planet * first, hlt::Planet * second)
+        {
             return first->location.get_distance_to(*this->origin) < second->location.get_distance_to(*this->origin);
         }
     };
