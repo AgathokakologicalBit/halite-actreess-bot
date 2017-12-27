@@ -110,7 +110,20 @@ public:
             Log::log("Target planet: " + std::to_string(new_target.entity_id));
         }
 
-        auto path = PathFinder::build_graph(Router::get_fleet_center(swarm), target, map.planets, 10);
+        auto center = Router::get_fleet_center(swarm);
+        hlt::Log::log(
+                "[Line] " +
+                std::to_string(target.pos_x) + ' ' +
+                std::to_string(target.pos_y) + ' ' +
+                std::to_string(center.pos_x) + ' ' +
+                std::to_string(center.pos_y)
+        );
+        auto path = PathFinder::build_graph(
+                center, target,
+                PathFinder::sort_by_distance(map.planets, center),
+                10
+        );
+
         auto next = path["end"];
         while (path[next->connected[0]]->id != "start")
             next = path[next->connected[0]];

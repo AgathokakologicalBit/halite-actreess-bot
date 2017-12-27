@@ -116,10 +116,11 @@ public:
      * @param list    list of planets to sort
      * @param origin  origin point to sort planets from
     */
-    static void sort_by_distance (std::vector<hlt::Planet *> & planets, hlt::Location origin)
+    static std::vector<hlt::Planet> sort_by_distance (std::vector<hlt::Planet> planets, hlt::Location origin)
     {
         // use a custom sorter to sort planets from closest to farthest
         std::sort(planets.begin(), planets.end(), distance_sorter(origin));
+        return planets;
     }
 
     /**
@@ -158,6 +159,14 @@ public:
             {
                 for (Node * edge_point : edge_points)
                 {
+                    hlt::Log::log(
+                            "[Line] " +
+                            std::to_string(edge_point->x) + ' ' +
+                            std::to_string(edge_point->y) + ' ' +
+                            std::to_string(graph["start"]->x) + ' ' +
+                            std::to_string(graph["start"]->y)
+                    );
+
                     edge_point->connect("start");
                     previous_nodes.push_back(edge_point->id);
                     graph[edge_point->id] = edge_point;
@@ -168,6 +177,20 @@ public:
             {
                 for (Node * edge_point : edge_points)
                 {
+                    hlt::Log::log(
+                            "[Line] " +
+                            std::to_string(edge_point->x) + ' ' +
+                            std::to_string(edge_point->y) + ' ' +
+                            std::to_string(graph[previous_nodes[previous_nodes.size() - 1]]->x) + ' ' +
+                            std::to_string(graph[previous_nodes[previous_nodes.size() - 1]]->y)
+                    );
+                    hlt::Log::log(
+                            "[Line] " +
+                            std::to_string(edge_point->x) + ' ' +
+                            std::to_string(edge_point->y) + ' ' +
+                            std::to_string(graph[previous_nodes[previous_nodes.size() - 2]]->x) + ' ' +
+                            std::to_string(graph[previous_nodes[previous_nodes.size() - 2]]->y)
+                    );
                     edge_point->connect(previous_nodes[previous_nodes.size() - 1]);
                     edge_point->connect(previous_nodes[previous_nodes.size() - 2]);
                     graph[edge_point->id] = edge_point;
@@ -250,9 +273,9 @@ private:
         /**
          * Function that computes if a planet is closer or farther to the origin than another (used by std::sort)
         */
-        bool operator () (hlt::Planet const * const first, hlt::Planet const * const second) const
+        bool operator () (hlt::Planet const & first, hlt::Planet const & second) const
         {
-            return first->location.get_distance_to(this->origin) < second->location.get_distance_to(this->origin);
+            return first.location.get_distance_to(this->origin) < second.location.get_distance_to(this->origin);
         }
     };
 };
