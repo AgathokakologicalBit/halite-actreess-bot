@@ -5,9 +5,11 @@
 #include <map>
 #include <string>
 
+
 #include "timer.h"
 #include "drone.h"
 #include "routing/router.h"
+#include "routing/pathfinder.h"
 #include "../hlt/hlt.hpp"
 #include "../hlt/navigation.hpp"
 
@@ -87,6 +89,7 @@ public:
         Log::log(std::string("Alive ships: ") + std::to_string(this->my_drones.size()));
 
         Timer $timer_strategies_evaluation("strategies evaluation");
+
         std::vector<const Ship *> swarm;
         for (auto drone : this->my_drones)
             swarm.push_back(&drone.second->ship);
@@ -95,18 +98,24 @@ public:
         static hlt::Location target{ 0, 0 };
         if (!target.pos_x)
         {
-            hlt::Location new_target{ 0, 0 };
+            hlt::Planet new_target;
             auto first_drone = this->my_drones.begin()->second->ship.location;
             for (auto const & p : map.planets)
                 if (max_radius < p.radius
                     || (max_radius == p.radius
-                        && new_target.get_distance_to(first_drone) < p.location.get_distance_to(first_drone)))
-                    max_radius = (new_target = p.location, p).radius; // WEIRD CODE, DON'T TOUCH
+                        && new_target.location.get_distance_to(first_drone) < p.location.get_distance_to(first_drone)))
+                    max_radius = (new_target = p).radius; // WEIRD CODE, DON'T TOUCH
 
-            target = new_target;
+            target = new_target.location;
+            Log::log("Target planet: " + std::to_string(new_target.entity_id));
         }
 
-        router.move(moves, swarm, target);
+        auto path = PathFinder::build_graph(Router::get_fleet_center(swarm), target, map.planets, 10);
+        auto next = path["end"];
+        while (path[next->connected[0]]->id != "start")
+            next = path[next->connected[0]];
+        router.move(moves, swarm, { next->x, next->y });
+
         return moves;
     }
 };

@@ -5,11 +5,12 @@
 #include <cmath>
 #include <map>
 
-#include "../hlt/hlt.hpp"
+#include "../../hlt/log.hpp"
+#include "../../hlt/hlt.hpp"
 #include "path.h"
 #include "node.h"
 
-class Pathfinder
+class PathFinder
 {
 public:
     /**
@@ -19,7 +20,7 @@ public:
      * @return                  a list of all planets within bounding box
     */
     static std::vector<const hlt::Planet *>
-    get_in_bounds (hlt::Location left_most_point, hlt::Location right_most_point, const hlt::Map & map) const
+    get_in_bounds (hlt::Location left_most_point, hlt::Location right_most_point, const hlt::Map & map)
     {
         std::vector<const hlt::Planet *> planets;
 
@@ -50,10 +51,10 @@ public:
      * @param goal      the location to end the line at.
      * @return planets  the planets to check for intersection
     */
-    static std::vector<hlt::Planet *>
-    get_intersecting (hlt::Location origin, hlt::Location goal, std::vector<hlt::Planet *> planets)
+    static std::vector<hlt::Planet>
+    get_intersecting (hlt::Location origin, hlt::Location goal, std::vector<hlt::Planet> const & planets)
     {
-        std::vector<hlt::Planet *> intersecting_planets;
+        std::vector<hlt::Planet> intersecting_planets;
 
         double distance_from_line;
 
@@ -64,13 +65,13 @@ public:
                     origin.pos_y,
                     goal.pos_x,
                     goal.pos_y,
-                    planet->location.pos_x,
-                    planet->location.pos_y
+                    planet.location.pos_x,
+                    planet.location.pos_y
             );
 
             // if the distance from the planet center to the line is >= the planet's radius
             // then we add it to the intersection vector
-            if (distance_from_line <= planet->radius)
+            if (distance_from_line <= planet.radius)
             {
                 intersecting_planets.push_back(planet);
             }
@@ -130,8 +131,10 @@ public:
      * @return         a list of locations forming a graph around the obstacles with first point being origin and last being goal
     */
     static std::map<std::string, Node *>
-    build_graph (hlt::Location origin, hlt::Location goal, std::vector<hlt::Planet *> const & planets, const double padding)
+    build_graph (hlt::Location origin, hlt::Location goal, std::vector<hlt::Planet> const & planets, const double padding)
     {
+        Timer $timer_build_graph("build search graph");
+
         std::map<std::string, Node *> graph;
 
         // add origin to the graph
@@ -141,38 +144,33 @@ public:
                 origin.pos_y
         )));
 
-        int id;
-
-        double distance_to_center;
-
-        std::vector<std::string> previous_nodes(planets.size());
+        std::vector<std::string> previous_nodes;
+        previous_nodes.reserve(planets.size());
 
         // iterate through the planets from closest to farthest computing their edge points and connecting
         // the nodes to form a graph
-        for (int i = 0; i < planets.size(); i++)
+        for (std::size_t i = 0; i < planets.size(); i++)
         {
-            id = planets[i]->entity_id;
+            std::vector<Node *> edge_points = get_edge_points(origin, planets[i], padding);
 
             // the first planet process will be connected to our start node
             if (i == 0)
             {
-                std::vector<Node *> edge_points = get_edge_points(origin, planets[i], padding);
                 for (Node * edge_point : edge_points)
                 {
                     edge_point->connect("start");
                     previous_nodes.push_back(edge_point->id);
-                    graph.insert(std::pair<std::string, Node *>(edge_point->id, edge_point));
+                    graph[edge_point->id] = edge_point;
                 }
             }
                 // every sequential planet is connected to the previous two planets' edge nodes
             else
             {
-                std::vector<Node *> edge_points = get_edge_points(origin, planets[i], padding);
                 for (Node * edge_point : edge_points)
                 {
                     edge_point->connect(previous_nodes[previous_nodes.size() - 1]);
                     edge_point->connect(previous_nodes[previous_nodes.size() - 2]);
-                    graph.insert(std::pair<std::string, Node *>(edge_point->id, edge_point));
+                    graph[edge_point->id] = edge_point;
                 }
 
                 for (Node * edge_point : edge_points)
@@ -204,24 +202,25 @@ public:
      * @param padding  how far the edge points should be from the planet surface
      * @return         a pair of nodes; the edge points on the sphere perpendicular to the line from the origin to the planet
     */
-    static std::vector<Node *> get_edge_points (hlt::Location origin, hlt::Planet * planet, const double padding)
+    static std::vector<Node *> get_edge_points (hlt::Location origin, hlt::Planet const & planet, const double padding)
     {
-        std::vector<Node *> edge_points(2);
+        std::vector<Node *> edge_points;
+        edge_points.reserve(2);
 
-        const double angle_from_horizon = origin.orient_towards_in_rad(planet->location);
-        const double distance_to_center = origin.get_distance_to(planet->location);
+        const double angle_from_horizon = origin.orient_towards_in_rad(planet.location);
+        const double distance_to_center = origin.get_distance_to(planet.location);
         // we use arctan instead of arctan2 beacuse we only want the small angle
-        const double tangent_angle = atan((planet->radius + padding) / distance_to_center);
+        const double tangent_angle = atan((planet.radius + padding) / distance_to_center);
         const double tangent_length = distance_to_center / cos(tangent_angle);
         const double node_x = tangent_length * std::sin(tangent_angle + angle_from_horizon);
         const double node_y = tangent_length * std::cos(tangent_angle + angle_from_horizon);
-        const double opposite_node_x = planet->location.pos_x + (node_x - planet->location.pos_x);
-        const double opposite_node_y = planet->location.pos_y + (node_y - planet->location.pos_y);
+        const double opposite_node_x = planet.location.pos_x + (node_x - planet.location.pos_x);
+        const double opposite_node_y = planet.location.pos_y + (node_y - planet.location.pos_y);
 
         // add the edge points to the vector
         // id has either a or b prepended: a for above, b for below
-        edge_points.push_back(new Node(planet->entity_id + "a", node_x, node_y));
-        edge_points.push_back(new Node(planet->entity_id + "b", opposite_node_x, opposite_node_y));
+        edge_points.push_back(new Node(std::to_string(planet.entity_id) + "a", node_x, node_y));
+        edge_points.push_back(new Node(std::to_string(planet.entity_id) + "b", opposite_node_x, opposite_node_y));
 
         return edge_points;
     }
@@ -233,7 +232,7 @@ public:
     */
     static Path * find_optimal_path (std::vector<hlt::Location *> & path)
     {
-
+        return nullptr;
     }
 
 private:
