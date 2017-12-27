@@ -20,7 +20,7 @@ public:
     std::vector<Drone *> drones;
     std::map<int, Drone *> my_drones;
 
-    Router * router = new Router();
+    Router router;
 
     explicit Bot (hlt::Metadata data)
             : id(data.player_id)
@@ -51,7 +51,9 @@ public:
         for (auto d : this->drones)
         {
             if (!d) break;
-            d->life_state = 1;
+
+            if (d->life_state < 2)
+                d->life_state += 1;
         }
 
         for (const auto & p : map.ships)
@@ -89,37 +91,22 @@ public:
         for (auto drone : this->my_drones)
             swarm.push_back(&drone.second->ship);
 
-        const hlt::Location target = map.planets[0].location;
-        router->move(moves, swarm, target);
-
-        /*
-        for (Ship const & ship : map.ships.at(this->id))
+        double max_radius = 0;
+        static hlt::Location target{ 0, 0 };
+        if (!target.pos_x)
         {
-            if (ship.docking_status != ShipDockingStatus::Undocked)
-                continue;
+            hlt::Location new_target{ 0, 0 };
+            auto first_drone = this->my_drones.begin()->second->ship.location;
+            for (auto const & p : map.planets)
+                if (max_radius < p.radius
+                    || (max_radius == p.radius
+                        && new_target.get_distance_to(first_drone) < p.location.get_distance_to(first_drone)))
+                    max_radius = (new_target = p.location, p).radius; // WEIRD CODE, DON'T TOUCH
 
-            for (Planet const & planet : map.planets)
-            {
-                if (planet.owned) continue;
-
-                if (ship.can_dock(planet))
-                {
-                    moves.push_back(Move::dock(ship.entity_id, planet.entity_id));
-                    break;
-                }
-
-                const possibly<Move> move =
-                        navigation::navigate_ship_to_dock(map, ship, planet, constants::MAX_SPEED * 4 / 5);
-                if (move.second)
-                {
-                    moves.push_back(move.first);
-                }
-
-                break;
-            }
+            target = new_target;
         }
-         */
 
+        router.move(moves, swarm, target);
         return moves;
     }
 };
