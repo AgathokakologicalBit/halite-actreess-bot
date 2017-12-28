@@ -100,7 +100,7 @@ public:
 
         static hlt::Planet target;
         static bool unreachable = true;
-        if (unreachable || target.location.get_distance_to(center) < 15)
+        if (unreachable || target.location.get_distance_to(center) < 20)
         {
             target = map.planets[random() % map.planets.size()];
             Log::log("Target planet: " + std::to_string(target.entity_id));
@@ -116,24 +116,27 @@ public:
         for (const auto & p : map.ships)
             if (p.first != this->id)
                 for (auto s : p.second)
-                    entities.push_back((s.radius = 7, s));
+                    entities.push_back((s.radius = 4, s));
 
         auto path = PathFinder::find_path(
                 center,
                 {
-                        target.location.x - ptr.x * (target.radius + 2),
-                        target.location.y - ptr.y * (target.radius + 2)
+                        target.location.x - ptr.x * (target.radius + 7),
+                        target.location.y - ptr.y * (target.radius + 7)
                 },
                 entities,
-                8
+                7
         );
-        for (auto w : path.waypoints)
-            Log::log(std::to_string(w.x) + 'x' + std::to_string(w.y));
 
         if (path.waypoints.size() < 2)
+        {
+            router.move(moves, swarm, center);
             unreachable = true;
+        }
         else
+        {
             router.move(moves, swarm, path.waypoints[1]);
+        }
 
         return moves;
     }

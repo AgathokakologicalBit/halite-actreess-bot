@@ -58,24 +58,19 @@ public:
 
         for (auto & entity : entities)
         {
-            double dfl = std::abs(point_distance_from_line(
+            double dfl = point_distance_from_line(
                     origin,
                     goal,
                     entity.location
-            ));
-
-            double side = point_distance_from_line(
-                    { origin.x + goal.y - origin.y, origin.y + origin.x - goal.x },
-                    { origin.x - goal.y + origin.y, origin.y - origin.x + goal.x },
-                    entity.location
             );
 
-            if (dfl <= entity.radius + radius * 1.5 && side >= 0
-                && origin.get_distance_to(goal) > origin.get_distance_to(entity.location) + entity.radius + radius + dfl)
+            if ((std::abs(dfl) <= entity.radius + radius + std::numeric_limits<double>::epsilon()
+                && origin.get_distance_to(goal) > entity.location.get_distance_to(goal)
+                && origin.get_distance_to(goal) > origin.get_distance_to(entity.location))
+                    || entity.radius + radius >= entity.location.get_distance_to(origin))
             {
                 intersecting_entities.push_back(entity);
             }
-
         }
 
         return intersecting_entities;
@@ -127,7 +122,7 @@ private:
     template <typename T>
     static int sgn (T val)
     {
-        return (T(0) < val) - (val < T(0));
+        return (T(0) <= val) - (val < T(0));
     }
 
 public:
@@ -146,6 +141,10 @@ public:
         for (auto v : find_path(start, end, entities, radius, 2).waypoints)
             path.add(v);
 
+        hlt::Log::log("Path size: " + std::to_string(path.waypoints.size()));
+        if (path.waypoints.empty())
+            return path;
+
         path.add(end);
         return path;
     }
@@ -162,12 +161,14 @@ private:
     {
         auto p = find_path(start, end, entities, radius, depth + 1);
 
+        if (!p.waypoints.empty())
+        {
             std::uint8_t const tint = 32;
             auto const col = Gizmos::color_from_rgb(tint, tint, tint);
             Gizmos::set_color(col * (depth + 1));
             Gizmos::line(start, end);
-            Gizmos::line(end, end);
             Gizmos::set_color(0xFFFFFF);
+        }
 
         return p;
     }
@@ -180,11 +181,7 @@ private:
             int depth
     )
     {
-        for (auto & e : entities)
-            if (e.radius >= start.get_distance_to(e.location))
-                return {};
-
-        if (depth > 15)
+        if (depth > 20)
             return {};
 
         Path path;
@@ -192,7 +189,6 @@ private:
         auto intersect = get_intersecting(start, end, entities, radius);
         intersect = sort_by_distance(intersect, start);
 
-        bool success = true;
         while (!intersect.empty())
         {
             hlt::Location sub{ end.x - start.x, end.y - start.y };
@@ -200,33 +196,42 @@ private:
             hlt::Location normal{ -sub.y / len, sub.x / len };
 
             auto dst = point_distance_from_line(start, end, intersect[0].location);
+            auto dst_ts = intersect[0].location.get_distance_to(start);
             auto nx = normal.x * (intersect[0].radius + radius + 1) * sgn(dst);
             auto ny = normal.y * (intersect[0].radius + radius + 1) * sgn(dst);
 
-            success = true;
+            bool success = true;
             {
                 hlt::Location mid{
                         intersect[0].location.x + nx,
                         intersect[0].location.y + ny
                 };
 
-                auto sub_path = find_sub_path(start, mid, entities, radius, depth);
-                for (auto v : sub_path.waypoints)
-                    path.add(v);
+                for (auto & e : entities)
+                    if (e.radius + radius > mid.get_distance_to(e.location))
+                        success = false;
 
-                if (success &= !sub_path.waypoints.empty())
+                if (success)
                 {
-                    sub_path = find_sub_path(mid, end, entities, radius, depth);
+                    auto sub_path = find_sub_path(start, mid, entities, radius, depth);
                     for (auto v : sub_path.waypoints)
                         path.add(v);
-                    success &= !sub_path.waypoints.empty();
+
+                    if (success &= !sub_path.waypoints.empty())
+                    {
+                        sub_path = find_sub_path(mid, end, entities, radius, depth);
+                        for (auto v : sub_path.waypoints)
+                            path.add(v);
+                        success &= !sub_path.waypoints.empty();
+                    }
                 }
 
                 if (!success) path.waypoints.clear();
             }
 
-            if (!success)
+            if (!success || dst < .5 * intersect[0].radius)
             {
+                Path sp;
                 success = true;
 
                 hlt::Location mid{
@@ -234,32 +239,41 @@ private:
                         intersect[0].location.y - ny
                 };
 
-                auto sub_path = find_sub_path(start, mid, entities, radius, depth);
-                for (auto v : sub_path.waypoints)
-                    path.add(v);
+                for (auto & e : entities)
+                    if (e.radius + radius > mid.get_distance_to(e.location))
+                        success = false;
 
-                if (success &= !sub_path.waypoints.empty())
+                if (success)
                 {
-                    sub_path = find_sub_path(mid, end, entities, radius, depth);
+                    auto sub_path = find_sub_path(start, mid, entities, radius, depth);
                     for (auto v : sub_path.waypoints)
-                        path.add(v);
-                    success &= !sub_path.waypoints.empty();
+                        sp.add(v);
+
+                    if (success &= !sub_path.waypoints.empty())
+                    {
+                        sub_path = find_sub_path(mid, end, entities, radius, depth);
+                        for (auto v : sub_path.waypoints)
+                            sp.add(v);
+                        success &= !sub_path.waypoints.empty();
+                    }
+
+                    if (path.waypoints.empty() || (success && sp.length < path.length))
+                        path = sp;
                 }
 
-                if (!success) path.waypoints.clear();
+                if (!success)
+                    path.waypoints.clear();
             }
 
-            if (success)
+            if (!path.waypoints.empty())
                 return path;
 
             intersect.erase(intersect.begin());
+            return {};
         }
 
 
         path.add(start);
-        if (!success)
-            path.waypoints.clear();
-
         return path;
     };
 
