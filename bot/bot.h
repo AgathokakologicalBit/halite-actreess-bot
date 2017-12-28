@@ -30,6 +30,7 @@ public:
     {
         Timer $timer_bot_init("bot init");
 
+        srand(static_cast<unsigned>(time(nullptr)));
         drones.resize(10000);
 
         for (const auto & p : data.initial_map.ships)
@@ -95,40 +96,44 @@ public:
         for (auto drone : this->my_drones)
             swarm.push_back(&drone.second->ship);
 
-        double max_radius = 0;
-        static hlt::Location target{ 0, 0 };
-        if (!target.x)
-        {
-            hlt::Planet new_target;
-            auto first_drone = this->my_drones.begin()->second->ship.location;
-            for (auto const & p : map.planets)
-                if (max_radius < p.radius
-                    || (max_radius == p.radius
-                        && new_target.location.get_distance_to(first_drone) < p.location.get_distance_to(first_drone)))
-                    max_radius = (new_target = p).radius; // WEIRD CODE, DON'T TOUCH
-
-            target = new_target.location;
-            Log::log("Target planet: " + std::to_string(new_target.entity_id));
-        }
-
         auto center = Router::get_fleet_center(swarm);
 
-        Gizmos::set_color(0xFF5533);
-        Gizmos::set_width(4);
-        Gizmos::line(center, target);
-        Gizmos::set_width(1);
-        Gizmos::set_color(0xFFFFFF);
+        static hlt::Planet target;
+        static bool unreachable = true;
+        if (unreachable || target.location.get_distance_to(center) < 15)
+        {
+            target = map.planets[random() % map.planets.size()];
+            Log::log("Target planet: " + std::to_string(target.entity_id));
+            unreachable = false;
+        }
 
-        auto path = PathFinder::build_graph(
-                center, target,
-                PathFinder::sort_by_distance(map.planets, center),
-                10
+        hlt::Location ptr{ target.location.x - center.x, target.location.y - center.y };
+        auto len = ptr.get_distance_to({ 0, 0 });
+        ptr.x /= len;
+        ptr.y /= len;
+
+        std::vector<Entity> entities(map.planets.begin(), map.planets.end());
+        for (const auto & p : map.ships)
+            if (p.first != this->id)
+                for (auto s : p.second)
+                    entities.push_back((s.radius = 7, s));
+
+        auto path = PathFinder::find_path(
+                center,
+                {
+                        target.location.x - ptr.x * (target.radius + 2),
+                        target.location.y - ptr.y * (target.radius + 2)
+                },
+                entities,
+                8
         );
+        for (auto w : path.waypoints)
+            Log::log(std::to_string(w.x) + 'x' + std::to_string(w.y));
 
-        auto next = path["end"];
-        while (path[next->connected[0]]->id != "start")
-            next = path[next->connected[0]];
-        router.move(moves, swarm, { next->x, next->y });
+        if (path.waypoints.size() < 2)
+            unreachable = true;
+        else
+            router.move(moves, swarm, path.waypoints[1]);
 
         return moves;
     }

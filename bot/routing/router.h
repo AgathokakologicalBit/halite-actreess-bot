@@ -17,10 +17,15 @@ public:
         Location center = get_fleet_center(ships);
         auto const centerShip = get_closest_ship(center, ships);
         int const angle = centerShip->location.orient_towards_in_deg(target);
+        auto const distance = center.get_distance_to(target);
 
         for (auto ship : ships)
         {
-            moves.push_back(Move::thrust(ship->entity_id, hlt::constants::MAX_SPEED, angle));
+            moves.push_back(Move::thrust(
+                    ship->entity_id,
+                    std::min(hlt::constants::MAX_SPEED, static_cast<int>(distance + .3)),
+                    angle
+            ));
         }
     }
 

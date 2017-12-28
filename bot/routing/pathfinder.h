@@ -51,64 +51,64 @@ public:
      * @param goal      the location to end the line at.
      * @return planets  the planets to check for intersection
     */
-    static std::vector<hlt::Planet>
-    get_intersecting (hlt::Location origin, hlt::Location goal, std::vector<hlt::Planet> const & planets)
+    static std::vector<hlt::Entity>
+    get_intersecting (hlt::Location origin, hlt::Location goal, std::vector<hlt::Entity> const & entities, double radius)
     {
-        std::vector<hlt::Planet> intersecting_planets;
+        std::vector<hlt::Entity> intersecting_entities;
 
-        double distance_from_line;
-
-        for (auto & planet : planets)
+        for (auto & entity : entities)
         {
-            distance_from_line = point_distance_from_line(
-                    origin.x,
-                    origin.y,
-                    goal.x,
-                    goal.y,
-                    planet.location.x,
-                    planet.location.y
+            double dfl = std::abs(point_distance_from_line(
+                    origin,
+                    goal,
+                    entity.location
+            ));
+
+            double side = point_distance_from_line(
+                    { origin.x + goal.y - origin.y, origin.y + origin.x - goal.x },
+                    { origin.x - goal.y + origin.y, origin.y - origin.x + goal.x },
+                    entity.location
             );
 
-            // if the distance from the planet center to the line is >= the planet's radius
-            // then we add it to the intersection vector
-            if (distance_from_line <= planet.radius)
+            if (dfl <= entity.radius + radius * 1.5 && side >= 0
+                && origin.get_distance_to(goal) > origin.get_distance_to(entity.location) + entity.radius + radius + dfl)
             {
-                intersecting_planets.push_back(planet);
+                intersecting_entities.push_back(entity);
             }
+
         }
 
-        return intersecting_planets;
+        return intersecting_entities;
     }
 
-    /**
-     * Computes the distance a point is from a line
-     * Adapted from: https://math.stackexchange.com/questions/275529/check-if-line-intersects-with-circles-perimeter
-     * @param line_start_x  the x of the starting point of the line
-     * @param line_start_y  the y of the starting point of the line
-     * @param line_end_x    the x of the ending point of the line
-     * @param line_end_y    the y of the ending point of the line
-     * @param point_x       the x of the point to measure from
-     * @param point_y       the y of the point to measure from
-     * @return              the distance from the point to the closest point on the line
-    */
     static double point_distance_from_line (
-            const double line_start_x,
-            const double line_start_y,
-            const double line_end_x,
-            const double line_end_y,
-            const double point_x,
-            const double point_y
+            hlt::Location start,
+            hlt::Location end,
+            hlt::Location point
     )
     {
-        return std::abs(
-                (line_end_y - line_start_y) * point_x +
-                (line_start_x - line_end_x) * point_y +
-                (line_start_y - line_end_y) * point_x +
-                (line_start_x - line_end_x) * point_y
-        ) / std::sqrt(
-                std::pow((line_end_y - line_start_y), 2.0) +
-                std::pow((line_start_x - line_end_x), 2.0)
-        );
+        hlt::Location line {
+                end.x - start.x,
+                end.y - start.y,
+        }; // direction of the line
+        auto len = line.get_distance_to({0, 0});
+        line.x /= len;
+        line.y /= len;
+
+        hlt::Location point_to_start{
+                start.x - point.x,
+                start.y - point.y,
+        }; // vector from the point to the start of the line
+
+        auto dot = point_to_start.x * line.x + point_to_start.y * line.y; //dot product of point_to_start * line
+        auto d = point_to_start.y * line.x - point_to_start.x * line.y;
+
+        hlt::Location distance {
+                point_to_start.x - dot * line.x,
+                point_to_start.y - dot * line.y,
+        }; //shortest distance vector from point to line
+
+        return sgn(d) * sqrt(distance.x * distance.x + distance.y * distance.y);
     }
 
     /**
@@ -116,132 +116,153 @@ public:
      * @param list    list of planets to sort
      * @param origin  origin point to sort planets from
     */
-    static std::vector<hlt::Planet> sort_by_distance (std::vector<hlt::Planet> planets, hlt::Location origin)
+    static std::vector<hlt::Entity> sort_by_distance (std::vector<hlt::Entity> entities, hlt::Location origin)
     {
         // use a custom sorter to sort planets from closest to farthest
-        std::sort(planets.begin(), planets.end(), distance_sorter(origin));
-        return planets;
+        std::sort(entities.begin(), entities.end(), distance_sorter(origin));
+        return entities;
     }
 
-    /**
-     * Builds a graph of points for navigating around a provided list of obstacles from location origin to goal
-     * @param origin   the starting location
-     * @param goal     the ending location
-     * @param planets  a list of planets to build points around
-     * @param padding  the padding to place between the graph nodes and the planets (0 would be right on the surface)
-     * @return         a list of locations forming a graph around the obstacles with first point being origin and last being goal
-    */
-    static std::map<std::string, Node *>
-    build_graph (hlt::Location origin, hlt::Location goal, std::vector<hlt::Planet> const & planets, const double padding)
+private:
+    template <typename T>
+    static int sgn (T val)
     {
-        Timer $timer_build_graph("build search graph");
-
-        std::map<std::string, Node *> graph;
-
-        // add origin to the graph
-        graph.insert(std::pair<std::string, Node *>("start", new Node(
-                "start",
-                origin.x,
-                origin.y
-        )));
-
-        std::vector<std::string> previous_nodes;
-        previous_nodes.reserve(planets.size());
-
-        // iterate through the planets from closest to farthest computing their edge points and connecting
-        // the nodes to form a graph
-        for (std::size_t i = 0; i < planets.size(); i++)
-        {
-            std::vector<Node *> edge_points = get_edge_points(origin, planets[i], padding);
-
-            // the first planet process will be connected to our start node
-            if (i == 0)
-            {
-                for (Node * edge_point : edge_points)
-                {
-                    Gizmos::line(edge_point, graph["start"]);
-
-                    edge_point->connect("start");
-                    previous_nodes.push_back(edge_point->id);
-                    graph[edge_point->id] = edge_point;
-                }
-            }
-                // every sequential planet is connected to the previous two planets' edge nodes
-            else
-            {
-                for (Node * edge_point : edge_points)
-                {
-                    Gizmos::line(edge_point, graph[previous_nodes[previous_nodes.size() - 1]]);
-                    Gizmos::line(edge_point, graph[previous_nodes[previous_nodes.size() - 2]]);
-
-                    edge_point->connect(previous_nodes[previous_nodes.size() - 1]);
-                    edge_point->connect(previous_nodes[previous_nodes.size() - 2]);
-                    graph[edge_point->id] = edge_point;
-                }
-
-                for (Node * edge_point : edge_points)
-                {
-                    previous_nodes.push_back(edge_point->id);
-                }
-            }
-        }
-
-        // add the goal node
-        Node * goalNode = new Node(
-                "end",
-                goal.x,
-                goal.y
-        );
-
-        // connect the goal node to the previous two planets' edge nodes
-        goalNode->connect(previous_nodes[previous_nodes.size() - 1]);
-        goalNode->connect(previous_nodes[previous_nodes.size() - 2]);
-        graph.insert(std::pair<std::string, Node *>("end", goalNode));
-
-        return graph;
+        return (T(0) < val) - (val < T(0));
     }
 
-    /**
-     * Get's the edge points around the circumference of a sphere
-     * @param origin   the origin location to calculate from
-     * @param planet   the planet to compute edge points against
-     * @param padding  how far the edge points should be from the planet surface
-     * @return         a pair of nodes; the edge points on the sphere perpendicular to the line from the origin to the planet
-    */
-    static std::vector<Node *> get_edge_points (hlt::Location origin, hlt::Planet const & planet, const double padding)
-    {
-        std::vector<Node *> edge_points;
-        edge_points.reserve(2);
-
-        const double angle_from_horizon = origin.orient_towards_in_rad(planet.location);
-        const double distance_to_center = origin.get_distance_to(planet.location);
-        // we use arctan instead of arctan2 beacuse we only want the small angle
-        const double tangent_angle = atan((planet.radius + padding) / distance_to_center);
-        const double tangent_length = distance_to_center / cos(tangent_angle);
-        const double node_x = tangent_length * std::sin(tangent_angle + angle_from_horizon);
-        const double node_y = tangent_length * std::cos(tangent_angle + angle_from_horizon);
-        const double opposite_node_x = planet.location.x + (node_x - planet.location.x);
-        const double opposite_node_y = planet.location.y + (node_y - planet.location.y);
-
-        // add the edge points to the vector
-        // id has either a or b prepended: a for above, b for below
-        edge_points.push_back(new Node(std::to_string(planet.entity_id) + "a", node_x, node_y));
-        edge_points.push_back(new Node(std::to_string(planet.entity_id) + "b", opposite_node_x, opposite_node_y));
-
-        return edge_points;
-    }
-
+public:
     /**
      * Finds the optimal path along a graph of points where the first point is the origin and the last point is the goal
      * @param path  the list of locations forming the graph where the first is the origin location and the last is the goal
      * @return      a path object
     */
-    static Path * find_optimal_path (std::vector<hlt::Location *> & path)
+    static Path
+    find_path (hlt::Location start, hlt::Location end, std::vector<hlt::Entity> const & entities, double radius)
     {
-        return nullptr;
+        Path path;
+
+        Gizmos::set_color(Gizmos::color_from_rgb(64, 64, 64));
+        Gizmos::line(start, end);
+        for (auto v : find_path(start, end, entities, radius, 2).waypoints)
+            path.add(v);
+
+        path.add(end);
+        return path;
     }
 
 private:
+    static Path find_sub_path
+    (
+         hlt::Location start,
+         hlt::Location end,
+         std::vector<hlt::Entity> const & entities,
+         double radius,
+         int depth
+    )
+    {
+        auto p = find_path(start, end, entities, radius, depth + 1);
+
+            std::uint8_t const tint = 32;
+            auto const col = Gizmos::color_from_rgb(tint, tint, tint);
+            Gizmos::set_color(col * (depth + 1));
+            Gizmos::line(start, end);
+            Gizmos::line(end, end);
+            Gizmos::set_color(0xFFFFFF);
+
+        return p;
+    }
+
+    static Path find_path (
+            hlt::Location start,
+            hlt::Location end,
+            std::vector<hlt::Entity> const & entities,
+            double radius,
+            int depth
+    )
+    {
+        for (auto & e : entities)
+            if (e.radius >= start.get_distance_to(e.location))
+                return {};
+
+        if (depth > 15)
+            return {};
+
+        Path path;
+
+        auto intersect = get_intersecting(start, end, entities, radius);
+        intersect = sort_by_distance(intersect, start);
+
+        bool success = true;
+        while (!intersect.empty())
+        {
+            hlt::Location sub{ end.x - start.x, end.y - start.y };
+            double len = sub.get_distance_to({ 0, 0 });
+            hlt::Location normal{ -sub.y / len, sub.x / len };
+
+            auto dst = point_distance_from_line(start, end, intersect[0].location);
+            auto nx = normal.x * (intersect[0].radius + radius + 1) * sgn(dst);
+            auto ny = normal.y * (intersect[0].radius + radius + 1) * sgn(dst);
+
+            success = true;
+            {
+                hlt::Location mid{
+                        intersect[0].location.x + nx,
+                        intersect[0].location.y + ny
+                };
+
+                auto sub_path = find_sub_path(start, mid, entities, radius, depth);
+                for (auto v : sub_path.waypoints)
+                    path.add(v);
+
+                if (success &= !sub_path.waypoints.empty())
+                {
+                    sub_path = find_sub_path(mid, end, entities, radius, depth);
+                    for (auto v : sub_path.waypoints)
+                        path.add(v);
+                    success &= !sub_path.waypoints.empty();
+                }
+
+                if (!success) path.waypoints.clear();
+            }
+
+            if (!success)
+            {
+                success = true;
+
+                hlt::Location mid{
+                        intersect[0].location.x - nx,
+                        intersect[0].location.y - ny
+                };
+
+                auto sub_path = find_sub_path(start, mid, entities, radius, depth);
+                for (auto v : sub_path.waypoints)
+                    path.add(v);
+
+                if (success &= !sub_path.waypoints.empty())
+                {
+                    sub_path = find_sub_path(mid, end, entities, radius, depth);
+                    for (auto v : sub_path.waypoints)
+                        path.add(v);
+                    success &= !sub_path.waypoints.empty();
+                }
+
+                if (!success) path.waypoints.clear();
+            }
+
+            if (success)
+                return path;
+
+            intersect.erase(intersect.begin());
+        }
+
+
+        path.add(start);
+        if (!success)
+            path.waypoints.clear();
+
+        return path;
+    };
+
     /**
      * Object used by std::sort to sort planet's based on their distance from an origin point
     */
@@ -256,7 +277,7 @@ private:
         /**
          * Function that computes if a planet is closer or farther to the origin than another (used by std::sort)
         */
-        bool operator () (hlt::Planet const & first, hlt::Planet const & second) const
+        bool operator () (hlt::Entity const & first, hlt::Entity const & second) const
         {
             return first.location.get_distance_to(this->origin) < second.location.get_distance_to(this->origin);
         }
