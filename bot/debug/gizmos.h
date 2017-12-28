@@ -19,10 +19,10 @@ public:
                 std::to_string(::width) + ' ' +
                 std::to_string(::color) + ' ' +
                 std::to_string(::dash) + ' ' +
-                std::to_string(start.x) + ' ' +
-                std::to_string(start.y) + ' ' +
-                std::to_string(end.x) + ' ' +
-                std::to_string(end.y)
+                std::to_string(static_cast<std::size_t>(start.x + .5)) + ' ' +
+                std::to_string(static_cast<std::size_t>(start.y + .5)) + ' ' +
+                std::to_string(static_cast<std::size_t>(end.x + .5)) + ' ' +
+                std::to_string(static_cast<std::size_t>(end.y + .5))
         );
     }
 

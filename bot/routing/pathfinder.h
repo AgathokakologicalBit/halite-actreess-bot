@@ -48,11 +48,19 @@ public:
     /**
      * Creates a list of all planets intersecting a line from an origin to a goal
      * @param origin    the location to start the line at.
-     * @param goal      the location to end the line at.
+     * @param end      the location to end the line at.
      * @return planets  the planets to check for intersection
     */
     static std::vector<hlt::Entity>
-    get_intersecting (hlt::Location origin, hlt::Location goal, std::vector<hlt::Entity> const & entities, double radius)
+    get_intersecting
+            (
+                    hlt::Location goal,
+                    hlt::Location origin,
+                    hlt::Location end,
+                    std::vector<hlt::Entity> const & entities,
+                    double radius,
+                    double fl_distance
+            )
     {
         std::vector<hlt::Entity> intersecting_entities;
 
@@ -60,14 +68,14 @@ public:
         {
             double dfl = point_distance_from_line(
                     origin,
-                    goal,
+                    end,
                     entity.location
             );
 
-            if ((std::abs(dfl) <= entity.radius + radius + std::numeric_limits<double>::epsilon()
-                && origin.get_distance_to(goal) > entity.location.get_distance_to(goal)
-                && origin.get_distance_to(goal) > origin.get_distance_to(entity.location))
-                    || entity.radius + radius >= entity.location.get_distance_to(origin))
+            if (std::abs(dfl) <= entity.radius + radius
+                && origin.get_distance_to(goal) - origin.get_distance_to(entity.location) - fl_distance + entity.radius + radius > 0
+                && origin.get_distance_to(end) + entity.radius + radius > entity.location.get_distance_to(end)
+                && origin.get_distance_to(end) + entity.radius + radius > origin.get_distance_to(entity.location))
             {
                 intersecting_entities.push_back(entity);
             }
@@ -82,11 +90,11 @@ public:
             hlt::Location point
     )
     {
-        hlt::Location line {
+        hlt::Location line{
                 end.x - start.x,
                 end.y - start.y,
         }; // direction of the line
-        auto len = line.get_distance_to({0, 0});
+        auto len = line.get_distance_to({ 0, 0 });
         line.x /= len;
         line.y /= len;
 
@@ -98,7 +106,7 @@ public:
         auto dot = point_to_start.x * line.x + point_to_start.y * line.y; //dot product of point_to_start * line
         auto d = point_to_start.y * line.x - point_to_start.x * line.y;
 
-        hlt::Location distance {
+        hlt::Location distance{
                 point_to_start.x - dot * line.x,
                 point_to_start.y - dot * line.y,
         }; //shortest distance vector from point to line
@@ -131,14 +139,20 @@ public:
      * @param path  the list of locations forming the graph where the first is the origin location and the last is the goal
      * @return      a path object
     */
-    static Path
-    find_path (hlt::Location start, hlt::Location end, std::vector<hlt::Entity> const & entities, double radius)
+    static Path find_path
+            (
+                    hlt::Location start,
+                    hlt::Location end,
+                    std::vector<hlt::Entity> const & entities,
+                    double radius,
+                    double fl_distance
+            )
     {
         Path path;
 
         Gizmos::set_color(Gizmos::color_from_rgb(64, 64, 64));
         Gizmos::line(start, end);
-        for (auto v : find_path(start, end, entities, radius, 2).waypoints)
+        for (auto v : find_path(end, start, end, entities, radius, 2, fl_distance, -1, 0).waypoints)
             path.add(v);
 
         hlt::Log::log("Path size: " + std::to_string(path.waypoints.size()));
@@ -151,15 +165,19 @@ public:
 
 private:
     static Path find_sub_path
-    (
-         hlt::Location start,
-         hlt::Location end,
-         std::vector<hlt::Entity> const & entities,
-         double radius,
-         int depth
-    )
+            (
+                    hlt::Location goal,
+                    hlt::Location start,
+                    hlt::Location end,
+                    std::vector<hlt::Entity> const & entities,
+                    double radius,
+                    int depth,
+                    double fl_distance,
+                    unsigned int last_entity,
+                    unsigned int count
+            )
     {
-        auto p = find_path(start, end, entities, radius, depth + 1);
+        auto p = find_path(goal, start, end, entities, radius, depth + 1, fl_distance, last_entity, count);
 
         if (!p.waypoints.empty())
         {
@@ -173,103 +191,121 @@ private:
         return p;
     }
 
+    static Path find_split_path
+            (
+                    hlt::Location goal,
+                    hlt::Location start,
+                    hlt::Location end,
+                    std::vector<hlt::Entity> const & entities,
+                    hlt::Entity const & intersect,
+                    double nx, double ny,
+                    double radius,
+                    int depth,
+                    double fl_distance,
+                    unsigned int last_entity,
+                    unsigned int count
+            )
+    {
+        hlt::Location mid{
+                intersect.location.x + nx,
+                intersect.location.y + ny
+        };
+
+        for (auto & e : entities)
+            if (e.radius + radius > mid.get_distance_to(e.location))
+                return {};
+
+        Path path;
+        bool success = true;
+        auto sub_path = find_sub_path(
+                goal, start, mid, entities,
+                radius, depth, fl_distance,
+                intersect.entity_id,
+                (intersect.entity_id == last_entity ? count : 0) + 1
+        );
+        for (auto v : sub_path.waypoints)
+            path.add(v);
+
+        if (success &= !sub_path.waypoints.empty())
+        {
+            sub_path = find_sub_path(
+                    goal, mid, end, entities,
+                    radius, depth, fl_distance,
+                    intersect.entity_id,
+                    (intersect.entity_id == last_entity ? count : 0) + 1
+            );
+            for (auto v : sub_path.waypoints)
+                path.add(v);
+            success &= !sub_path.waypoints.empty();
+        }
+
+        if (!success) path.waypoints.clear();
+        return path;
+    }
+
     static Path find_path (
+            hlt::Location goal,
             hlt::Location start,
             hlt::Location end,
             std::vector<hlt::Entity> const & entities,
             double radius,
-            int depth
+            int depth,
+            double fl_distance,
+            unsigned int last_entity,
+            unsigned int count
     )
     {
-        if (depth > 20)
-            return {};
-
         Path path;
 
-        auto intersect = get_intersecting(start, end, entities, radius);
-        intersect = sort_by_distance(intersect, start);
-
-        while (!intersect.empty())
+        if (goal.get_distance_to(start) <= fl_distance)
         {
+            for (auto & e : entities)
+                if (e.radius + radius > start.get_distance_to(e.location))
+                    return {};
+
+            path.add(start);
+            return path;
+        }
+
+        if (depth > 15)
+            return { };
+
+        auto intersects = get_intersecting(goal, start, end, entities, radius, fl_distance);
+
+        while (!intersects.empty() && path.waypoints.empty())
+        {
+            auto intersect = sort_by_distance(intersects, start)[0];
+            if (intersect.entity_id == last_entity && count > 3)
+                return { };
+
             hlt::Location sub{ end.x - start.x, end.y - start.y };
             double len = sub.get_distance_to({ 0, 0 });
             hlt::Location normal{ -sub.y / len, sub.x / len };
 
-            auto dst = point_distance_from_line(start, end, intersect[0].location);
-            auto dst_ts = intersect[0].location.get_distance_to(start);
-            auto nx = normal.x * (intersect[0].radius + radius + 1) * sgn(dst);
-            auto ny = normal.y * (intersect[0].radius + radius + 1) * sgn(dst);
+            auto dst = point_distance_from_line(start, end, intersect.location);
+            auto dst_ts = intersect.location.get_distance_to(start);
+            auto nx = normal.x * (radius + intersect.radius * (dst_ts + 1) / dst_ts + 1);
+            auto ny = normal.y * (radius + intersect.radius * (dst_ts + 1) / dst_ts + 1);
 
-            bool success = true;
-            {
-                hlt::Location mid{
-                        intersect[0].location.x + nx,
-                        intersect[0].location.y + ny
-                };
+            path = find_split_path(
+                    goal, start, end,
+                    entities, intersect,
+                    nx, ny,
+                    radius, depth, fl_distance,
+                    last_entity, count
+            );
+            auto np = find_split_path(
+                    goal, start, end,
+                    entities, intersect,
+                    -nx, -ny,
+                    radius, depth, fl_distance,
+                    last_entity, count
+            );
 
-                for (auto & e : entities)
-                    if (e.radius + radius > mid.get_distance_to(e.location))
-                        success = false;
+            if (path.waypoints.empty() || (!np.waypoints.empty() && np.length < path.length))
+                path = np;
 
-                if (success)
-                {
-                    auto sub_path = find_sub_path(start, mid, entities, radius, depth);
-                    for (auto v : sub_path.waypoints)
-                        path.add(v);
-
-                    if (success &= !sub_path.waypoints.empty())
-                    {
-                        sub_path = find_sub_path(mid, end, entities, radius, depth);
-                        for (auto v : sub_path.waypoints)
-                            path.add(v);
-                        success &= !sub_path.waypoints.empty();
-                    }
-                }
-
-                if (!success) path.waypoints.clear();
-            }
-
-            if (!success || dst < .5 * intersect[0].radius)
-            {
-                Path sp;
-                success = true;
-
-                hlt::Location mid{
-                        intersect[0].location.x - nx,
-                        intersect[0].location.y - ny
-                };
-
-                for (auto & e : entities)
-                    if (e.radius + radius > mid.get_distance_to(e.location))
-                        success = false;
-
-                if (success)
-                {
-                    auto sub_path = find_sub_path(start, mid, entities, radius, depth);
-                    for (auto v : sub_path.waypoints)
-                        sp.add(v);
-
-                    if (success &= !sub_path.waypoints.empty())
-                    {
-                        sub_path = find_sub_path(mid, end, entities, radius, depth);
-                        for (auto v : sub_path.waypoints)
-                            sp.add(v);
-                        success &= !sub_path.waypoints.empty();
-                    }
-
-                    if (path.waypoints.empty() || (success && sp.length < path.length))
-                        path = sp;
-                }
-
-                if (!success)
-                    path.waypoints.clear();
-            }
-
-            if (!path.waypoints.empty())
-                return path;
-
-            intersect.erase(intersect.begin());
-            return {};
+            intersects.erase(intersects.begin());
         }
 
 

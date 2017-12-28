@@ -99,36 +99,36 @@ public:
         auto center = Router::get_fleet_center(swarm);
 
         static hlt::Planet target;
+        static hlt::Location loc;
         static bool unreachable = true;
-        if (unreachable || target.location.get_distance_to(center) < 20)
+        static double fl_distance = 0;
+        while (unreachable || target.location.get_distance_to(center) < 20)
         {
             target = map.planets[random() % map.planets.size()];
             Log::log("Target planet: " + std::to_string(target.entity_id));
             unreachable = false;
+
+            loc = {
+                    target.location.x,
+                    target.location.y
+            };
+            fl_distance = target.radius + 5;
         }
 
-        hlt::Location ptr{ target.location.x - center.x, target.location.y - center.y };
-        auto len = ptr.get_distance_to({ 0, 0 });
-        ptr.x /= len;
-        ptr.y /= len;
 
-        std::vector<Entity> entities(map.planets.begin(), map.planets.end());
+        std::vector<Entity> entities;
+
+        for (const auto & p : map.planets)
+                entities.push_back(p);
+
         for (const auto & p : map.ships)
             if (p.first != this->id)
                 for (auto s : p.second)
-                    entities.push_back((s.radius = 4, s));
+                    if (s.docking_status == hlt::ShipDockingStatus::Undocked)
+                        entities.push_back((s.radius = hlt::constants::WEAPON_RADIUS + hlt::constants::MAX_SPEED, s));
 
-        auto path = PathFinder::find_path(
-                center,
-                {
-                        target.location.x - ptr.x * (target.radius + 7),
-                        target.location.y - ptr.y * (target.radius + 7)
-                },
-                entities,
-                7
-        );
-
-        if (path.waypoints.size() < 2)
+        auto path = PathFinder::find_path(center, loc, entities, 4, fl_distance);
+        if (path.waypoints.empty())
         {
             router.move(moves, swarm, center);
             unreachable = true;
