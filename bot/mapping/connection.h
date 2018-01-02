@@ -6,6 +6,6 @@
 
 struct Connection final
 {
-    Point * begin, * end;
-    unsigned int score;
+    Point const * begin, * end;
+    double score;
 };

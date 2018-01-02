@@ -22,8 +22,8 @@ public:
 
     hlt::Map const * map;
 
-    std::vector<hlt::Entity *> entities;
-    std::vector<Drone *> drones;
+    std::vector<Entity> entities;
+    std::map<int, Drone> drones;
 
     std::map<int, Drone *> my_drones;
 

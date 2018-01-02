@@ -11,21 +11,20 @@ Bot::Bot (hlt::Metadata data)
     Timer $timer_bot_init("bot init");
 
     this->map = &data.initial_map;
-
-    this->navmap_force = new ForceMap(*this, data.initial_map.width / 10, data.initial_map.height / 10);
+    this->navmap_force = new ForceMap(*this, data.initial_map.width / 5, data.initial_map.height / 5);
+    this->map = nullptr;
 
     srand(static_cast<unsigned>(time(nullptr)));
-    drones.resize(10000);
 
     for (const auto & p : data.initial_map.ships)
     {
         for (const auto & s : p.second)
         {
-            auto d = new Drone(s);
-
-            this->drones[s.entity_id] = d;
+            this->drones[s.entity_id] = Drone(s);
             if (this->id == p.first)
-                this->my_drones[s.entity_id] = d;
+                this->my_drones[s.entity_id] = &this->drones[s.entity_id];
+
+            this->drones[s.entity_id].update(s);
         }
     }
 }
@@ -37,39 +36,43 @@ std::vector<hlt::Move> Bot::make_turn (const hlt::Map & map)
 
     this->map = &map;
 
-    for (auto d : this->drones)
+    for (auto & d : this->drones)
     {
-        if (!d) break;
+        if (d.second.life_state == 0) break;
 
-        if (d->life_state < 2)
-            d->life_state += 1;
+        if (d.second.life_state < 3)
+            d.second.life_state += 1;
     }
 
     for (const auto & p : map.ships)
     {
         for (const auto & s : p.second)
         {
-            if (!this->drones[s.entity_id])
+            if (!this->drones[s.entity_id].life_state)
             {
-                this->drones[s.entity_id] = new Drone(s);
+                this->drones[s.entity_id] = Drone(s);
                 if (s.owner_id == this->id)
-                    this->my_drones[s.entity_id] = this->drones[s.entity_id];
+                    this->my_drones[s.entity_id] = &this->drones[s.entity_id];
 
                 Log::log("Bot #" + std::to_string(s.entity_id) + " was spawned");
             }
 
-            this->drones[s.entity_id]->update(s);
+            this->drones[s.entity_id].update(s);
         }
     }
 
-    for (auto d : this->drones)
+    for (auto it = drones.begin(); it != drones.end();)
     {
-        if (!d) break;
-        if (d->life_state != 1) continue;
+        if (it->second.life_state != 2)
+        {
+            ++it;
+            continue;
+        }
 
-        Log::log("Bot #" + std::to_string(d->id) + " was destroyed");
-        if (this->my_drones.count(d->id))
-            this->my_drones.erase(d->id);
+        Log::log("Bot #" + std::to_string(it->first) + " was destroyed");
+        if (it->second.ship.owner_id == id)
+            this->my_drones.erase(it->first);
+        it = this->drones.erase(it);
     }
 
     std::vector<hlt::Move> moves;
@@ -92,15 +95,12 @@ std::vector<hlt::Move> Bot::make_turn (const hlt::Map & map)
     }
 
 
-    std::vector<hlt::Entity> entities;
+    entities.clear();
+    entities.reserve(drones.size() + map.planets.size());
     for (const auto & p : map.planets)
-        entities.push_back(p);
-
-    for (const auto & p : map.ships)
-        if (p.first != this->id)
-            for (auto s : p.second)
-                if (s.docking_status == hlt::ShipDockingStatus::Undocked)
-                    entities.push_back((s.radius = hlt::constants::WEAPON_RADIUS + hlt::constants::MAX_SPEED, s));
+        entities.emplace_back(p);
+    for (const auto & p : drones)
+        entities.emplace_back(p.second);
 
     this->navmap_force->analyze(*this);
 
@@ -109,6 +109,9 @@ std::vector<hlt::Move> Bot::make_turn (const hlt::Map & map)
         for (unsigned x = 0; x < this->navmap_force->width; ++x)
         {
             auto s = *this->navmap_force->get_point(x, y);
+            std::uint32_t color = 0x010101 * (static_cast<unsigned>(s.score * ((1 << 8) - 1)));
+            Gizmos::set_color(color);
+            Gizmos::set_width(static_cast<std::uint8_t>(1 + s.score * 2));
             Gizmos::line(Point(0, s.x - 1, s.y + 1), Point(0, s.x + 1, s.y - 1));
         }
     }

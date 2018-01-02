@@ -27,7 +27,7 @@ public:
 
     void update (hlt::Entity const & entity)
     {
-        this->life_state = 0;
+        this->life_state = 1;
         this->obj = entity;
     }
 };

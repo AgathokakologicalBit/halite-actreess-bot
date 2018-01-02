@@ -12,6 +12,11 @@ public:
 
 
 public:
+    Drone ()
+            : Entity(hlt::Location(), 0)
+              , ship()
+    { }
+
     explicit Drone (hlt::Ship const & ship_)
             : Entity(ship_)
               , ship(ship_)

@@ -6,9 +6,12 @@
 
 struct Point : public hlt::Location
 {
+public:
     unsigned int id;
-    unsigned int score;
+    double score;
 
+
+public:
     Point ()
             : hlt::Location(0, 0)
               , id(0)
@@ -20,4 +23,8 @@ struct Point : public hlt::Location
               , id(id)
               , score(0)
     { }
+
+
+public:
+    bool operator < (Point & r) const { return score < r.score; }
 };
