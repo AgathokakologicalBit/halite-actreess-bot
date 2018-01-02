@@ -10,7 +10,7 @@
 #include "path.h"
 #include "node.h"
 
-class PathFinder
+class $old$PathFinder
 {
 public:
     /**
@@ -282,7 +282,6 @@ private:
             double len = sub.get_distance_to({ 0, 0 });
             hlt::Location normal{ -sub.y / len, sub.x / len };
 
-            auto dst = point_distance_from_line(start, end, intersect.location);
             auto dst_ts = intersect.location.get_distance_to(start);
             auto nx = normal.x * (radius + intersect.radius * (dst_ts + 1) / dst_ts + 1);
             auto ny = normal.y * (radius + intersect.radius * (dst_ts + 1) / dst_ts + 1);

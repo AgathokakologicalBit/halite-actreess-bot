@@ -4,7 +4,7 @@
 #include <string>
 #include <map>
 
-#include "../drone.h"
+#include "entities/drone.h"
 #include "../../hlt/hlt.hpp"
 
 class Router
