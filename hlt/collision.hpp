@@ -30,12 +30,12 @@ namespace hlt {
             // and substitute into the equation of a circle
             // Solve for t
             const double circle_radius = circle.radius;
-            const double start_x = start.pos_x;
-            const double start_y = start.pos_y;
-            const double end_x = end.pos_x;
-            const double end_y = end.pos_y;
-            const double center_x = circle.location.pos_x;
-            const double center_y = circle.location.pos_y;
+            const double start_x = start.x;
+            const double start_y = start.y;
+            const double end_x = end.x;
+            const double end_y = end.y;
+            const double center_x = circle.location.x;
+            const double center_y = circle.location.y;
             const double dx = end_x - start_x;
             const double dy = end_y - start_y;
 

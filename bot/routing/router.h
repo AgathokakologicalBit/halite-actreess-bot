@@ -4,23 +4,28 @@
 #include <string>
 #include <map>
 
-#include "drone.h"
-#include "../hlt/hlt.hpp"
+#include "entities/drone.h"
+#include "../../hlt/hlt.hpp"
 
 class Router
 {
 public:
-    void move (std::vector<hlt::Move> & moves, std::vector<hlt::Ship const *> ships, hlt::Location const target)
+    void move (std::vector<hlt::Move> & moves, std::vector<hlt::Ship const *> & ships, hlt::Location const target)
     {
         using namespace hlt;
 
         Location center = get_fleet_center(ships);
         auto const centerShip = get_closest_ship(center, ships);
         int const angle = centerShip->location.orient_towards_in_deg(target);
+        auto const distance = center.get_distance_to(target);
 
         for (auto ship : ships)
         {
-            moves.push_back(Move::thrust(ship->entity_id, hlt::constants::MAX_SPEED, angle));
+            moves.push_back(Move::thrust(
+                    ship->entity_id,
+                    std::min(hlt::constants::MAX_SPEED, static_cast<int>(distance + .3)),
+                    angle
+            ));
         }
     }
 
@@ -30,18 +35,18 @@ public:
      * @param ships      vector containing the id's of the ships to pick a center from
      * @return           location of the middle of the fleet
      */
-    static hlt::Location get_fleet_center (std::vector<hlt::Ship const *> ships)
+    static hlt::Location get_fleet_center (std::vector<hlt::Ship const *> & ships)
     {
-        hlt::Location center;
+        hlt::Location center{ 0, 0 };
 
         for (auto & ship : ships)
         {
-            center.pos_x += ship->location.pos_x;
-            center.pos_y += ship->location.pos_y;
+            center.x += ship->location.x;
+            center.y += ship->location.y;
         }
 
-        center.pos_x /= ships.size();
-        center.pos_y /= ships.size();
+        center.x /= ships.size();
+        center.y /= ships.size();
 
         return center;
     }
@@ -52,7 +57,7 @@ public:
      * @param ships     A list of ships closest to
      * @return          Ship object closest to point
     */
-    static const hlt::Ship * get_closest_ship (hlt::Location location, std::vector<hlt::Ship const *> ships)
+    static const hlt::Ship * get_closest_ship (hlt::Location location, std::vector<hlt::Ship const *> & ships)
     {
         const hlt::Ship * closest = ships[0];
         double best_distance = closest->location.get_distance_to(location);

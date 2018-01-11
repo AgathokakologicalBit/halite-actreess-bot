@@ -1,5 +1,6 @@
 #include "bot/bot.h"
 
+
 int main()
 {
     using namespace hlt;
