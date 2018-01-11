@@ -44,29 +44,30 @@ public:
 
     ~ForceMap () = default;
 
-public:
-    void analyze (Bot const & bot) final
+
+private:
+    template <typename $ET>
+    void map (Bot const & bot, std::string name, std::map<int, $ET> entities, float targets_radius, float multiplier)
     {
-        Timer $timer_analyze_map("map analysis");
-        connections.clear();
-        
-        // resetting scores
-        for (std::size_t i = 0; i < this->width * this->height; ++i)
-            points[i].score = 0;
+        Timer $timer_analyze_map("entities analysis " + name);
 
         // calculating new scores
-        double mult = static_cast<double>(width) / bot.map->width;
-        for (auto const & e : bot.entities)
+        double const wmult = static_cast<double>(width) / bot.map->width;
+
+        for (auto const & e : entities)
         {
             std::set<std::pair<unsigned, unsigned>> targets;
 
-            int sx = std::max(static_cast<int>((e.obj.location.x - e.obj.radius) * mult - 1), 0);
-            int sy = std::max(static_cast<int>((e.obj.location.y - e.obj.radius) * mult - 1), 0);
+            const auto & obj = e.second->obj;
+            auto radius = targets_radius + obj.radius;
 
-            int ex = std::min(static_cast<int>((e.obj.location.x + e.obj.radius) * mult) + 2,
-                                  static_cast<int>(width - 1));
-            int ey = std::min(static_cast<int>((e.obj.location.y + e.obj.radius) * mult) + 2,
-                                  static_cast<int>(height - 1));
+            int sx = std::max(static_cast<int>((obj.location.x - radius) * wmult - 1), 0);
+            int sy = std::max(static_cast<int>((obj.location.y - radius) * wmult - 1), 0);
+
+            int ex = std::min(static_cast<int>((obj.location.x + radius) * wmult) + 2,
+                              static_cast<int>(width - 1));
+            int ey = std::min(static_cast<int>((obj.location.y + radius) * wmult) + 2,
+                              static_cast<int>(height - 1));
 
             for (int y = sy; y < ey; ++y)
             {
@@ -74,22 +75,33 @@ public:
                 {
                     auto & p = points[y * width + x];
 
-                    auto dst = e.obj.location.get_distance_to(p);
-                    if (dst > e.obj.radius + 1 / mult)
+                    auto dst = obj.location.get_distance_to(p);
+                    if (dst > radius)
                         continue;
 
-                    p.score += (64 + e.obj.health) * (e.obj.owner_id == bot.id ? -1 : 1) * (dst > e.obj.radius ? .5 : 1);
+                    p.score += (1 + obj.health / 100) * multiplier;
+                    p.score = std::abs(p.score);
                     Gizmos::set_color(Gizmos::color_from_rgb(50, 150, 255));
-                    Gizmos::line(e.obj.location, p);
+                    Gizmos::line(obj.location, p);
                 }
             }
         }
+    }
 
-        double max_score = std::max_element(points, points + width * height)->score;
+public:
+    void analyze (Bot const & bot) final
+    {
+        Timer $timer_analyze_map("map analysis");
+        connections.clear();
 
-        // normalizing scores
+        // resetting scores
         for (std::size_t i = 0; i < this->width * this->height; ++i)
-            points[i].score = std::max(points[i].score / max_score, .0);
+            points[i].score = 0;
+
+        map(bot, "planets", bot.planets, 5, 1);
+        map(bot, "drones", bot.drones, 5, 1);
+        map(bot, "drones-attack", bot.drones, 5 + static_cast<float>(hlt::constants::WEAPON_RADIUS), .5);
+        map(bot, "player-attack", bot.my_drones, 5 + static_cast<float>(hlt::constants::WEAPON_RADIUS), -1);
     }
 
     Point * get_point (unsigned x, unsigned y) final

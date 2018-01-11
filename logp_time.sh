@@ -2,8 +2,8 @@
 
 cat ./0_Juice-0.log |
 sed -ne 's/^\[Timer\] \(.*\): \([0-9]*\).*/\1~\2/p' |
-sed -ne 's/ /-/p' |
-sed -ne 's/~/ /p' |
+sed -ne 's/ /-/gp' |
+sed -ne 's/~/ /gp' |
 gawk \
 'NF == 2 { sum[$1] += $2; N[$1]++ }
   END { for (key in sum) {

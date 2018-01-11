@@ -4,6 +4,7 @@
 #include <list>
 #include <map>
 #include <string>
+#include <memory>
 
 
 #include "routing/router.h"
@@ -22,10 +23,10 @@ public:
 
     hlt::Map const * map;
 
-    std::vector<Entity> entities;
-    std::map<int, Drone> drones;
+    std::map<int, std::shared_ptr<Entity>> planets;
+    std::map<int, std::shared_ptr<Drone>> drones;
 
-    std::map<int, Drone *> my_drones;
+    std::map<int, std::shared_ptr<Drone>> my_drones;
 
     ForceMap * navmap_force;
     Router router;
