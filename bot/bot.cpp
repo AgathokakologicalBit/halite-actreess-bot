@@ -86,12 +86,12 @@ std::vector<hlt::Move> Bot::make_turn (const hlt::Map & map)
 
     auto center = Router::get_fleet_center(swarm);
 
-    static hlt::Location target;
+    static hlt::Location target(random() % map.width, random() % map.height);
     static double fl_distance = 20;
     while (target.get_distance_to(center) < fl_distance)
     {
-        target.x = random() / static_cast<double>(map.width);
-        target.y = random() / static_cast<double>(map.height);
+        target.x = random() % map.width;
+        target.y = random() % map.height;
     }
 
 

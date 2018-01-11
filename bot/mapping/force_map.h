@@ -4,12 +4,12 @@
 #include "connection.h"
 #include "imap.h"
 #include "../bot.h"
+#include "../debug/gizmos.h"
 
 #include <algorithm>
 #include <map>
 #include <vector>
 #include <memory>
-#include <debug/gizmos.h>
 
 
 class ForceMap final : public IMap
@@ -92,10 +92,9 @@ private:
     }
 
 public:
-    unsigned get_size() const final
-    {
-        return width;
-    }
+    unsigned get_width() const final { return width; }
+    unsigned get_height() const final { return height; }
+
 
     void analyze (Bot const & bot) final
     {

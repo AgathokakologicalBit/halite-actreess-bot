@@ -17,5 +17,6 @@ public:
 
     virtual std::vector<Connection> get_connections (Point const *) const = 0;
 
-    virtual unsigned get_size() const = 0;
+    virtual unsigned get_width() const = 0;
+    virtual unsigned get_height() const = 0;
 };

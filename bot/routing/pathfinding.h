@@ -15,8 +15,8 @@ public:
     {
         Path path;
 
-        auto const start = *map.get_point(static_cast<unsigned>(e.obj.location.x * map.get_size() / bot.map->width),
-                                   static_cast<unsigned>(std::round(e.obj.location.y * map.get_size() / bot.map->height)));
+        auto const start = *map.get_point(static_cast<unsigned>(e.obj.location.x * map.get_width() / bot.map->width),
+                                   static_cast<unsigned>(std::round(e.obj.location.y * map.get_height() / bot.map->height)));
 
         path.add(start);
         path.add(target);
