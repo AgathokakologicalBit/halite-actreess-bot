@@ -1,28 +1,30 @@
 #pragma once
 
-#include "../hlt/ship.hpp"
+#include "../../hlt/ship.hpp"
 #include "tag_list.h"
+#include "entity.h"
 
-class Drone
+
+class Drone : public Entity
 {
 public:
-    int id;
     hlt::Ship ship;
 
-    unsigned int life_state;
 
-    TagList tags;
+public:
+    Drone ()
+            : Entity(hlt::Location(), 0)
+              , ship()
+    { }
 
     explicit Drone (hlt::Ship const & ship_)
-            : id(ship_.entity_id)
+            : Entity(ship_)
               , ship(ship_)
-              , life_state(2)
-              , tags()
     { }
 
     void update (hlt::Ship const & ship)
     {
-        this->life_state = 0;
+        Entity::update(ship);
         this->ship = ship;
     }
 };

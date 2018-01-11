@@ -1,8 +1,10 @@
 #pragma once
 
+#define DEBUG_MODE
 
 #include <cstddef>
 #include "../../hlt/log.hpp"
+
 
 static std::uint8_t width = 1;
 static std::uint32_t color = 0xFFFFFF;
@@ -11,9 +13,10 @@ static std::uint16_t dash;
 class Gizmos
 {
 public:
-    template <typename T>
-    static void line (T const & start, T const & end)
+    template <typename T, typename U>
+    static void line (T const & start, U const & end)
     {
+#ifdef DEBUG_MODE
         hlt::Log::log(
                 "[Line] " +
                 std::to_string(::width) + ' ' +
@@ -24,10 +27,11 @@ public:
                 std::to_string(static_cast<std::size_t>(end.x + .5)) + ' ' +
                 std::to_string(static_cast<std::size_t>(end.y + .5))
         );
+#endif
     }
 
-    template <typename T>
-    static void line (T * const start, T * const end)
+    template <typename T, typename U>
+    static void line (T * const start, U * const end)
     {
         Gizmos::line(*start, *end);
     }

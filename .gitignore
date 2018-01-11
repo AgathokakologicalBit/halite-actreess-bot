@@ -28,3 +28,6 @@ halite*
 *.cbp
 *.zip
 *cache*
+*.*~
+
+Makefile
