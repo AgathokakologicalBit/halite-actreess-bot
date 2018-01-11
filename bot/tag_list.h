@@ -15,14 +15,16 @@ public:
     /**
      * Creates empty tags list ready to be filled with values
      */
-    TagList() : tags() {}
+    TagList ()
+            : tags()
+    { }
 
     /**
      * Adds new tag to the list
      * @param tag
      * @return is element was added
      */
-    bool add(std::string& tag)
+    bool add (std::string & tag)
     {
         if (tags.count(tag)) return true;
         return tags.insert(tag), false;
@@ -33,7 +35,7 @@ public:
      * @param tag
      * @return is element was removed
      */
-    bool remove(std::string& tag)
+    bool remove (std::string & tag)
     {
         return tags.erase(tag) > 0;
     }
@@ -43,7 +45,7 @@ public:
      * @param tag
      * @return new state of the tag
      */
-    bool toggle(std::string& tag)
+    bool toggle (std::string & tag)
     {
         if (tags.count(tag))
             return tags.erase(tag), false;
@@ -55,7 +57,7 @@ public:
      * @param tag
      * @return current tag state
      */
-    bool get(std::string& tag)
+    bool get (std::string & tag)
     {
         return tags.count(tag) > 0;
     }

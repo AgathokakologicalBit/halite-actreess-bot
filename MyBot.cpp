@@ -1,13 +1,17 @@
 #include "bot/bot.h"
 
-int main() {
+
+int main()
+{
     using namespace hlt;
 
     Bot bot(initialize("Juice-0"));
-    while (true) {
+    while (true)
+    {
         const Map map = in::get_map();
         auto moves = bot.make_turn(map);
-        if (!out::send_moves(moves)) {
+        if (!out::send_moves(moves))
+        {
             Log::log("send_moves failed; exiting");
             break;
         }
