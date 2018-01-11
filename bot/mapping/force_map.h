@@ -20,24 +20,25 @@ public:
     Point * points;
     std::map<unsigned, std::vector<Connection>> connections;
 
+    double mult_w, mult_h;
+
 
     ForceMap (Bot const & bot, unsigned width, unsigned height)
             : width(width)
               , height(height)
               , points(new Point[width * height])
+              , mult_w(bot.map->width / width)
+              , mult_h(bot.map->height / height)
     {
         for (unsigned y = 0; y < this->height; ++y)
         {
             for (unsigned x = 0; x < this->width; ++x)
             {
-                double mx = bot.map->width;
-                double my = bot.map->height;
-
                 double hx = bot.map->width / width / 2;
                 double hy = bot.map->height / height / 2;
 
                 unsigned id = y * width + x;
-                points[id] = Point(id, x * mx / width + hx, y * my / height + hy);
+                points[id] = Point(id, x * mult_w + hx, y * mult_h + hy);
             }
         }
     }
@@ -92,8 +93,11 @@ private:
     }
 
 public:
-    unsigned get_width() const final { return width; }
-    unsigned get_height() const final { return height; }
+    unsigned get_width () const final
+    { return width; }
+
+    unsigned get_height () const final
+    { return height; }
 
 
     void analyze (Bot const & bot) final
@@ -126,10 +130,11 @@ public:
                 { 0,  -1 }
         };
 
+
         for (auto s : positions)
         {
-            if (p->x + s.x < 0 || p->x + s.x >= width) continue;
-            if (p->y + s.y < 0 || p->y + s.y >= height) continue;
+            if (p->x / mult_w + s.x < 0 || p->x / mult_w + s.x >= width) continue;
+            if (p->y / mult_h + s.y < 0 || p->y / mult_h + s.y >= height) continue;
 
             auto e = &this->points[p->id + static_cast<int>(s.y) * width + static_cast<int>(s.x)];
             connections.push_back({ p, e, (p->score + e->score) * p->get_distance_to(*e) });

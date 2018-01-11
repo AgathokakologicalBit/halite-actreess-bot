@@ -95,6 +95,7 @@ std::vector<hlt::Move> Bot::make_turn (const hlt::Map & map)
     }
 
 
+    Gizmos::line(center, target);
     this->planets.clear();
     for (const auto & p : map.planets)
         this->planets[p.entity_id] = std::make_shared<Entity>(p);
@@ -126,6 +127,7 @@ std::vector<hlt::Move> Bot::make_turn (const hlt::Map & map)
     */
 
     auto path = PathFinder::find_path(*this, Entity(center, 4), target, *this->navmap_force, fl_distance);
+    hlt::Log::log("Path size: " + std::to_string(path.waypoints.size()));
     if (path.waypoints.size() < 2)
     {
         router.move(moves, swarm, center);

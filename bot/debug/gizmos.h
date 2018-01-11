@@ -31,7 +31,7 @@ public:
     }
 
     template <typename T, typename U>
-    static void line (T * const start, U * const end)
+    static void line (T const * const start, U const * const end)
     {
         Gizmos::line(*start, *end);
     }
