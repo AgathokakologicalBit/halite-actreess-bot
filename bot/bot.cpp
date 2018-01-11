@@ -72,8 +72,6 @@ std::vector<hlt::Move> Bot::make_turn (const hlt::Map & map)
         Log::log("Bot #" + std::to_string(it->first) + " was destroyed");
         if (it->second->ship.owner_id == id)
             this->my_drones.erase(it->first);
-
-        delete &*it;
         it = this->drones.erase(it);
     }
 
@@ -103,6 +101,7 @@ std::vector<hlt::Move> Bot::make_turn (const hlt::Map & map)
 
     this->navmap_force->analyze(*this);
 
+    /*
     //
     //  Debug navmap drawing
     //
@@ -124,9 +123,10 @@ std::vector<hlt::Move> Bot::make_turn (const hlt::Map & map)
             }
         }
     }
+    */
 
-    auto path = PathFinder::find_path(Entity(center, 4), target, *this->navmap_force, fl_distance);
-    if (path.waypoints.empty())
+    auto path = PathFinder::find_path(*this, Entity(center, 4), target, *this->navmap_force, fl_distance);
+    if (path.waypoints.size() < 2)
     {
         router.move(moves, swarm, center);
     }

@@ -81,14 +81,22 @@ private:
 
                     p.score += (1 + obj.health / 100) * multiplier;
                     p.score = std::abs(p.score);
+
+                    /*
                     Gizmos::set_color(Gizmos::color_from_rgb(50, 150, 255));
                     Gizmos::line(obj.location, p);
+                    */
                 }
             }
         }
     }
 
 public:
+    unsigned get_size() const final
+    {
+        return width;
+    }
+
     void analyze (Bot const & bot) final
     {
         Timer $timer_analyze_map("map analysis");
@@ -104,12 +112,12 @@ public:
         map(bot, "player-attack", bot.my_drones, 5 + static_cast<float>(hlt::constants::WEAPON_RADIUS), -1);
     }
 
-    Point * get_point (unsigned x, unsigned y) final
+    Point * get_point (unsigned x, unsigned y) const final
     {
         return points + (y * this->width + x);
     }
 
-    std::vector<Connection> get_connections (Point const * p) final
+    std::vector<Connection> get_connections (Point const * p) const final
     {
         std::vector<Connection> connections;
         hlt::Location positions[]{
